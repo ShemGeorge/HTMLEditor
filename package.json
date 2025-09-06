@@ -1,0 +1,16 @@
+{
+  "name": "htmleditor",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "Shem",
+  "license": "ISC",
+  "description": "HTMLEditor",
+  "devDependencies": {
+    "electron": "^36.2.0",
+    "electron-packager": "^17.1.2"
+  }
+}

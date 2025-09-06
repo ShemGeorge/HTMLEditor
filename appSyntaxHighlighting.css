@@ -1,0 +1,127 @@
+.comment-light {
+color: #888888;
+}
+
+.html-doctype-light {
+color: #0000ff;
+}
+
+.html-bracket-light, .html-close-light {
+color: #006b62;
+}
+
+.html-tag-light {
+color: #d500f9;
+}
+
+.html-attribute-light {
+color: #ff8c00;
+}
+
+.html-attributeEquals-light {
+color: black;
+}
+
+.html-attributeValue-light {
+color: #1e40af;
+}
+
+.css-selector-light {
+color: #d000ff;
+}
+
+.css-delimiter-light {
+color: #e63946;
+}
+
+.css-property-light {
+color: #0080ff;
+}
+
+.css-propertyValue-light {
+color: #00c853;
+}
+
+.javascript-string-light {
+color: #55aa55;
+}
+
+.javascript-keyword-light {
+color: #ff1744;
+}
+
+.javascript-number-light {
+color: #7c4dff;
+}
+
+.javascript-property-light {
+color: #00acc1;
+}
+
+.javascript-regularExpression-light {
+color: #006b62;
+}
+
+.comment-dark {
+color: #7f8c8d;
+}
+
+.html-doctype-dark {
+color: #ffff00;
+}
+
+.html-bracket-dark, .html-close-dark {
+color: #ff79c6;
+}
+
+.html-tag-dark {
+color: #00ffe0;
+}
+
+.html-attribute-dark {
+color: #ffb86c;
+}
+
+.html-attributeEquals-dark {
+color: white;
+}
+
+.html-attributeValue-dark {
+color: #8be9fd;
+}
+
+.css-selector-dark {
+color: #bd93f9;
+}
+
+.css-delimiter-dark {
+color: #ffc0cb;
+}
+
+.css-property-dark {
+color: #50fa7b;
+}
+
+.css-propertyValue-dark {
+color: #f1fa8c;
+}
+
+.javascript-string-dark {
+color: #a8ff60;
+}
+
+.javascript-keyword-dark {
+color: #ff5555;
+}
+
+.javascript-number-dark {
+color: #bd93f9;
+}
+
+.javascript-property-dark {
+color: #00d4ff;
+}
+
+.javascript-regularExpression-dark {
+color: #ff79c6;
+}
