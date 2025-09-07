@@ -32,12 +32,12 @@ font-size: 16px;
 font-family: monospace;
 cursor: pointer;
 transition: all 0.3s ease;
-box-shadow: 0px 4px 6px rgba(0,0,0,0.2);
+box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 button:hover {
 background: linear-gradient(135deg, #A5D6A7, #81C784);
-box-shadow: 0px 6px 10px rgba(0,0,0,0.3);
+box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.3);
 transform: scale(1.05);
 }
 
@@ -59,8 +59,8 @@ transition: all 0.2s ease !important;
 white-space: pre;
 font-family: monospace;
 font-size: 10px;
-width: 1500px;
-height: 150px;
+width: calc(1500 / 1536 * 100vw);
+height: calc(150 / 298 * 100vh);
 padding: 10px;
 overflow-y: auto;
 overflow-x: auto;
@@ -73,8 +73,8 @@ white-space: pre;
 font-family: monospace;
 font-size: 15px;
 line-height: 18px;
-width: 735px;
-height: 668px;
+width: calc(735 / 1536 * 100vw);
+height: calc(668 / 298 * 100vh);
 padding: 10px;
 border: 1px solid black;
 caret-color: black;
@@ -93,16 +93,16 @@ color: grey;
 
 .code-wrapper {
 display: flex;
-width: 775px;
-height: 690px;
+width: calc(775 / 1536 * 100vw);
+height: calc(690 / 298 * 100vh);
 border: 1px solid #ccc;
 background: white;
 box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .line-numbers {
-width: 40px;
-height: 655px;
+width: calc(40 / 1536 * 100vw);
+height: calc(655 / 298 * 100vh);
 background-color: white;
 padding: 10px;
 text-align: right;
@@ -124,8 +124,8 @@ padding-right: 5px;
 }
 
 #result {
-height: 690px;
-width: 740px;
+height: calc(690 / 298 * 100vh);
+width: calc(740 / 1536 * 100vw);
 border: 1px solid black;
 display: block;
 }
@@ -156,11 +156,11 @@ cursor: pointer;
 }
 
 #allCodes {
-height: 500px;
-width: 700px;
+height: calc(500 / 298 * 100vh);
+width: calc(700 / 1536 * 100vw);
 border: 1px solid black;
 overflow: auto;
-padding-left: 535px;
+padding-left: calc(535 / 1536 * 100vh);
 }
 
 #fileMenu {
