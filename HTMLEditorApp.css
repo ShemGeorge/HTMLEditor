@@ -60,7 +60,7 @@ white-space: pre;
 font-family: monospace;
 font-size: 10px;
 width: calc(1500 / 1536 * 100vw);
-height: calc(150 / 298 * 100vh);
+height: calc(150 / 695 * 100vh);
 padding: 10px;
 overflow-y: auto;
 overflow-x: auto;
@@ -74,7 +74,7 @@ font-family: monospace;
 font-size: 15px;
 line-height: 18px;
 width: calc(735 / 1536 * 100vw);
-height: calc(668 / 298 * 100vh);
+height: calc(668 / 695 * 100vh);
 padding: 10px;
 border: 1px solid black;
 caret-color: black;
@@ -94,7 +94,7 @@ color: grey;
 .code-wrapper {
 display: flex;
 width: calc(775 / 1536 * 100vw);
-height: calc(690 / 298 * 100vh);
+height: calc(690 / 695 * 100vh);
 border: 1px solid #ccc;
 background: white;
 box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -102,7 +102,7 @@ box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 
 .line-numbers {
 width: calc(40 / 1536 * 100vw);
-height: calc(655 / 298 * 100vh);
+height: calc(655 / 695 * 100vh);
 background-color: white;
 padding: 10px;
 text-align: right;
@@ -124,7 +124,7 @@ padding-right: 5px;
 }
 
 #result {
-height: calc(690 / 298 * 100vh);
+height: calc(690 / 695 * 100vh);
 width: calc(740 / 1536 * 100vw);
 border: 1px solid black;
 display: block;
@@ -156,7 +156,7 @@ cursor: pointer;
 }
 
 #allCodes {
-height: calc(500 / 298 * 100vh);
+height: calc(500 / 695 * 100vh);
 width: calc(700 / 1536 * 100vw);
 border: 1px solid black;
 overflow: auto;
@@ -197,3 +197,4 @@ a:hover {
 color: blue;
 text-decoration: underline;
 }
+
