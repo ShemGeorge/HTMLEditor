@@ -1,17 +1,42 @@
-# HTMLEditorApp
+# HTMLEditor
 
-A lightweight HTML/CSS/JS editor with live preview, themes, and snippet management. Built by Shem.
+HTMLEditor is a custom HTML/CSS/JS mini-IDE built with Electron.  
+It allows you to write, edit, and preview HTML projects with syntax highlighting, live preview, and code management features. Perfect for beginners and pros alike.  
+
+---
 
 ## Features
-- Editable code area with syntax highlighting
-- Live preview in browser
-- Save/load code snippets
-- Light & dark themes
-- Export as HTML or .code
 
-## How to Use
-1. Open `HTMLEditorApp.html` in your browser.  
-2. Or run with Electron:
-   ```bash
-   npm install
-   npm start
+- Live HTML preview in real-time  
+- Syntax highlighting for HTML, CSS, and JavaScript  
+- Save, load, and export your projects  
+- Light/Dark themes  
+- Tutorials tab for learning HTML/CSS/JS  
+- Fullscreen preview mode  
+
+---
+
+## How to Get the App
+
+1. Go to the **[Releases](https://github.com/ShemGeorge/HTMLEditor/releases)** page.  
+2. Download the latest **`HTMLEditor-Setup-1.0.0.exe`** file.  
+3. Run the installer and follow the prompts.  
+4. Once installed, open **HTMLEditor** from your desktop or start menu.  
+
+> ⚠️ Windows only: Currently the installer is for Windows (x64).  
+
+---
+
+## Optional
+
+If you want the **source code**, you can download the **zip or tar.gz** files under “Source code” in the Releases section.  
+
+---
+
+## Support
+
+For any questions, issues, or suggestions, open an **issue** in this repository.  
+
+---
+
+*Built with intensity by Shem.*
