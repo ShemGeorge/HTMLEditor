@@ -16,6 +16,10 @@ It allows you to write, edit, and preview HTML projects with syntax highlighting
 
 ---
 
+## Open Live Demo
+
+- To open a live demo, **[click here](https://shemgeorge.github.io/HTMLEditor/HTMLEditorApp.html)**.
+
 ## How to Get the App
 
 1. Go to the **[Releases](https://github.com/ShemGeorge/HTMLEditor/releases)** page.  
