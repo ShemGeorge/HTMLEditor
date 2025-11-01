@@ -1,5 +1,6 @@
 var defaultTitle = document.title;
 var unsavedChanges = false;
+const debuggerKey = "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";
 
 window.addEventListener("beforeunload", (e) => {
 if (unsavedChanges) {
@@ -58,49 +59,6 @@ code.addEventListener("scroll", function() {
 document.getElementById("lineList").parentElement.scrollTop = code.scrollTop;
 });
 }
-
-window.addEventListener("message", (e) => {
-if (e.data && e.data.__fromPreview) {
-const div = document.getElementById("consoleOutput");
-const p = document.createElement("div");
-const now = new Date();
-const timestamp = now.toLocaleTimeString([], { 
-hour: 'numeric', 
-minute: '2-digit', 
-hour12: true 
-});
-
-let message = "";
-if (e.data.type === "error") {
-const raw = e.data.args[0];
-const errType = e.data.args[1] || "";
-const errMsg= e.data.args[2] || "";
-let help = "";
-if (errType === "ReferenceError") help = "What's wrong: You used a variable that hasn't been declared.";
-if (errType === "TypeError") help = "What's wrong: You're doing something invalid with a value.";
-if (errType === "SyntaxError") help = "What's wrong: Your code has a syntax issue (like a missing bracket).";
-if (errType === "RangeError") help = "What's wrong: A value is outside the allowed range (like recursion depth too high).";
-if (errType === "URIError") help = "What's wrong: Problem with encodeURI/decodeURI usage.";
-if (errType === "EvalError") help = "What's wrong: Incorrect use of eval(). Rare in modern JS.";
-if (errType === "Error") help = "What's wrong: General error. Consider using a more specific error type.";
-if (errType === "Non-Error") help = "What's wrong: You threw a raw value (like a string). Use 'throw new Error(...)' for clearer debugging.";
-if (errType === "PromiseError") help = "What's wrong: A Promise was rejected without a catch().";
-message = `<span style="color:white;">[${timestamp}]</span> ${raw}`;
-if (help) {
-message += `<br><span style="color:gray;">${help}</span><br><br>`;
-}
-} else {
-const typeTag = `[${e.data.type.toUpperCase()}]`;
-message = `<span style="color:white;">[${timestamp}]</span> ${typeTag} ${e.data.args.join(" ")}<br><br>`;
-}
-p.innerHTML = message;
-if (e.data.type === "error") p.style.color = "red";
-if (e.data.type === "warn") p.style.color = "yellow";
-if (e.data.type === "info") p.style.color = "cyan";
-div.appendChild(p);
-div.scrollTop = div.scrollHeight;
-}
-});
 
 function invalidArray(array) {
 if (Array.isArray(array)) {
@@ -308,10 +266,6 @@ fileMenu.style.display = "none";
 });
 }
 
-function printStuff() {
-  ipcRenderer.send('print-content');
-}
-
 function copyCodeName(anyCode) {
 var textarea = document.createElement("textarea");
 document.body.appendChild(textarea);
@@ -345,57 +299,68 @@ showCodes();
 }
 }
 
+async function AIdebugger() {
+var code = document.getElementById("code").innerText.trim();
+var debuggerPanel = document.getElementById("debuggerPanel");
+var fixedCode = document.getElementById("fixedCode");
+debuggerPanel.innerHTML = "Please wait while we process your code...";
+fixedCode.textContent = "";
+const body = {
+model: "qwen/qwen3-coder:free",
+messages: [
+{
+role: "system",
+content: `You are an expert HTML/CSS/JavaScript debugger and fixer.
+Only analyze and correct issues in HTML files (even if they contain embedded CSS or JS). Do NOT do this for standalone CSS or JS files.
+Always respond exactly in this format:
+ERROR: (clearly describe all issues found in the code, if none tell that there are no errors to be fixed)
+SUGGESTED FIX: (explain what changes are needed and why, if none tell that there are no suggested fixes to be done)
+FULL CORRECTED CODE: (provide the entire corrected HTML code, if none tell that it's not possible as there are no errors)`
+},
+{ role: "user", content: code }
+]
+};
+try {
+const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+method: "POST",
+headers: {
+"Authorization": "Bearer " + debuggerKey,
+"Content-Type": "application/json"
+},
+body: JSON.stringify(body)
+});
+if (!res.ok) {
+debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}: ${res.status === 429 ? "Too Many Requests. Try Again Later." : res.statusText}</div>`;
+return;
+}
+const data = await res.json();
+let text = data.choices?.[0]?.message?.content || "No response";
+text = text.replace(/```(html|js|javascript|css)?/gi, "").replace(/```/g, "").trim();
+const errorMatch = text.match(/ERROR:\s*([\s\S]*?)SUGGESTED FIX:/i);
+const fixMatch = text.match(/SUGGESTED FIX:\s*([\s\S]*?)FULL CORRECTED CODE:/i);
+const codeMatch = text.match(/FULL CORRECTED CODE:\s*([\s\S]*)/i);
+const errorText = errorMatch ? errorMatch[1].trim() : "No error found.";
+const fixText = fixMatch ? fixMatch[1].trim() : "No suggested fix found.";
+const codeText = codeMatch ? codeMatch[1].trim() : "";
+debuggerPanel.innerHTML = `<div class="error-text"><u>ERROR</u>:<br> ${errorText.textify()}</div>
+<div class="fix-text"><u>SUGGESTED FIX</u>:<br> ${fixText.textify()}</div><br><u style="color: #0f0;">FULL FIXED CODE</u>:`;
+fixedCode.innerHTML = codeText.textify();
+syntaxHighlight(fixedCode, "html");
+} catch (err) {
+debuggerPanel.innerHTML = `<div class="error-text">Error: ${err.message}</div>`;
+}
+}
+
 function runCode() {
 var code = document.getElementById("code");
 var result = document.getElementById("result");
 var script = document.createElement("script");
 updateLineNumbers(code, document.getElementById("lineList"));
-const doc = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body>
-<script>
-(function(){
-function send(type,...args){
-parent.postMessage({type,args,__fromPreview:true},"*");
-}
-['log','warn','error','info'].forEach(lvl=>{
-const orig = console[lvl];
-console[lvl] = function(...a){ send(lvl,...a); orig.apply(console,a); }
-});
-window.onerror = function(msg, src, line, col, error){
-const OFFSET = 37;
-const userLine = line - OFFSET;
-
-let errType, errMsg;
-if (error && error.constructor) {
-errType = error.constructor.name;
-errMsg = error.message;
-} else {
-errType = "Non-Error";
-errMsg = msg;
-}
-
-send("error", \`[ERROR AT LINE \${userLine}, COLUMN \${col}] \${errType}: \${errMsg}\`, errType, errMsg);
-};
-window.onunhandledrejection = e=>{
-const reason = e.reason || {};
-const errType = reason.constructor ? reason.constructor.name : "PromiseError";
-const errMsg = reason.message || reason;
-send("error", "Unhandled rejection: " + errMsg, errType, errMsg);
-};
-})();
-<\/script>
-${code.textContent}
-</body>
-</html>`;
-result.srcdoc = doc;
+result.srcdoc = code.innerText;
 result.focus();
-window.scrollTo({
-top: 600,
-left: 0,
-behavior: "smooth"
+document.getElementById("container").scrollIntoView({
+behavior: "smooth",
+block: "start"
 });
 }
 
@@ -432,8 +397,9 @@ result.focus();
 }
 }
 
-function clearConsole() {
-document.getElementById("consoleOutput").innerHTML = "";
+function clearDebuggerPanel() {
+document.getElementById("debuggerPanel").innerHTML = "";
+document.getElementById("fixedCode").innerHTML = "";
 }
 
 function saveCode() {
@@ -511,6 +477,7 @@ runCode();
 document.title = defaultTitle;
 updateText(code);
 syntaxHighlight(code, "html");
+clearDebuggerPanel();
 }
 }
 else {
@@ -520,6 +487,7 @@ runCode();
 document.title = defaultTitle;
 updateText(code);
 syntaxHighlight(code, "html");
+clearDebuggerPanel();
 }
 }
 
@@ -532,6 +500,7 @@ runCode();
 document.title = defaultTitle;
 updateText(code);
 syntaxHighlight(code, "html");
+clearDebuggerPanel();
 }
 
 function openTutorial() {
@@ -547,16 +516,18 @@ var creatingASyntaxHighlighter = document.getElementById("creatingASyntaxHighlig
 var forLoopCode = `<!DOCTYPE html>
 <html>
 <head>
-<scri` + `pt>
+<script>
 function showArrayItems() {
 var myArray = ["Bugatti", "Koenigsegg Jesko", "McLaren", "Tesla", "Lamborghini", "Ferrari", "Porsche", "Mercedes Benz", "BMW", "Audi", "Pagani", "Maserati"];
 var showItems = document.getElementById("showItems");
-showItems.textContent = null;
+showItems.textContent = "";
 for (var i = 0; i < myArray.length; i++) {
-showItems.innerHTML += "<li>" + myArray[i];
+var li = document.createElement("li");
+li.textContent = myArray[i];
+showItems.appendChild(li);
 }
 }
-</scri` + `pt>
+</script>
 </head>
 <body>
 <h1>For Loop</h1>
@@ -568,7 +539,7 @@ showItems.innerHTML += "<li>" + myArray[i];
 var randomNumberShowCode = `<!DOCTYPE html>
 <html>
 <head>
-<scri` + `pt>
+<script>
 function showRandomNumber() {
 var min = Number(document.getElementById("min").value);
 var max = Number(document.getElementById("max").value);
@@ -579,13 +550,13 @@ else {
 document.getElementById("show").textContent = "The minimum value is not lesser than the maximum value. Please try again.";
 }
 }
-</scr` + `ipt>
+</script>
 </head>
 <body>
 <h1>Random Number Show</h1>
 <ul>
-<li>Minimum:<input type="number" id="min">
-<li>Maximum:<input type="number" id="max">
+<li>Minimum: <input type="number" id="min"></li>
+<li>Maximum: <input type="number" id="max"></li>
 </ul>
 <button onclick="showRandomNumber()">Show random number</button>
 <p id="show"></p>
@@ -594,49 +565,54 @@ document.getElementById("show").textContent = "The minimum value is not lesser t
 var jsCanvasCode = `<!DOCTYPE html>
 <html>
 <head>
-<scri` + `pt>
+<script>
 function draw() {
 var ctx = document.getElementById("canvas").getContext("2d");
 ctx.clearRect(0, 0, 200, 200);
 ctx.fillStyle = "green";
-ctx.fillRect(Math.floor(Math.random() * (161) + 0), Math.floor(Math.random() * (161) + 0), 40, 40);
+ctx.fillRect(Math.floor(Math.random() * (161 - 40)), Math.floor(Math.random() * (161 - 40)), 40, 40);
 }
-</scri` + `pt>
+</script>
 </head>
 <body>
 <h1>JS Canvas</h1>
 <button onclick="draw()">Draw on canvas</button><br>
-<canvas id="canvas" style="border: 1px solid black;" height="200" width="200"></canvas>
-</body>
-</html>`;
-var jsAlertCode = `<!DOCTYPE html>
-<html>
-<head>
-<scri` + `pt>
-function showMessage(message) {
-alert(message);
-}
-</scri` + `pt>
-</head>
-<body>
-<h1>JS Alert</h1>
-<button onclick="showMessage('Hi! This is an alert box!')">Click me</button>
+<canvas id="canvas" height="200" width="200" style="border: 1px solid black;"></canvas>
 </body>
 </html>`;
 var propertyAsAFunctionInJsCode = `<!DOCTYPE html>
 <html>
 <head>
-<scri` + `pt>
-String.prototype.colored = function(color) {
-return "<font style='color: " + color + "'>" + this + "</font>";
+<style>
+.colored-text {
+padding: 5px;
 }
-</scri` + `pt>
+</style>
+<script>
+String.prototype.colored = function(color) {
+return "<span class='colored-text' style='color: " + color + "'>" + this + "</span>";
+}
+</script>
 </head>
 <body>
 <h1>Property As A Function In JS</h1>
 <p>Clicking the "Colour Text" button will call a property function called String.colored().</p>
 <button onclick="document.getElementById('colorText').innerHTML = 'Sample Text'.colored('green')">Colour Text</button>
 <p id="colorText"></p>
+</body>
+</html>`;
+var jsAlertCode = `<!DOCTYPE html>
+<html>
+<head>
+<script>
+function showMessage(message) {
+alert(message);
+}
+</script>
+</head>
+<body>
+<h1>JS Alert</h1>
+<button onclick="showMessage('Hi! This is an alert box!')">Click me</button>
 </body>
 </html>`;
 var creatingASyntaxHighlighterCode = `<!DOCTYPE html>
@@ -762,7 +738,7 @@ Theme: <select id="theme" onchange="changeTheme(); syntaxHighlight(document.getE
 <div class="code" id="javascript" oninput="syntaxHighlightContentEditableElement(this, 'javascript'); updateLineNumbers(this, document.getElementById('JSLineList'));" contentEditable="plaintext-only" spellcheck="false" placeholder="Javascript"></div>
 </div>
 </body>
-<html>`;
+</html>`;
 if (code.textContent.length > 0) {
 confirmOpenTutorial = confirm("Are you sure you want to open this tutorial? Changes may not be saved.");
 if (confirmOpenTutorial == true) {
