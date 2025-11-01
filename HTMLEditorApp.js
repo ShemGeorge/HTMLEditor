@@ -304,6 +304,7 @@ var debuggerPanel = document.getElementById("debuggerPanel");
 var fixedCode = document.getElementById("fixedCode");
 debuggerPanel.innerHTML = "Please wait while we process your code...";
 fixedCode.textContent = "";
+try {
 const res = await fetch("https://b9aef733-ee6f-4619-a5c9-14ac4d08afd2-00-wo2y4fr20qlt.pike.replit.dev/debug", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
@@ -816,6 +817,7 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
 
 
 
