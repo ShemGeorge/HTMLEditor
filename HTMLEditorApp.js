@@ -1,6 +1,5 @@
 var defaultTitle = document.title;
 var unsavedChanges = false;
-const debuggerKey = process.env.OPENROUTER_API_KEY;
 
 window.addEventListener("beforeunload", (e) => {
 if (unsavedChanges) {
@@ -305,29 +304,10 @@ var debuggerPanel = document.getElementById("debuggerPanel");
 var fixedCode = document.getElementById("fixedCode");
 debuggerPanel.innerHTML = "Please wait while we process your code...";
 fixedCode.textContent = "";
-const body = {
-model: "qwen/qwen3-coder:free",
-messages: [
-{
-role: "system",
-content: `You are an expert HTML/CSS/JavaScript debugger and fixer.
-Only analyze and correct issues in HTML files (even if they contain embedded CSS or JS). Do NOT do this for standalone CSS or JS files.
-Always respond exactly in this format:
-ERROR: (clearly describe all issues found in the code, if none tell that there are no errors to be fixed)
-SUGGESTED FIX: (explain what changes are needed and why, if none tell that there are no suggested fixes to be done)
-FULL CORRECTED CODE: (provide the entire corrected HTML code, if none tell that it's not possible as there are no errors)`
-},
-{ role: "user", content: code }
-]
-};
-try {
-const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+const res = await fetch("https://b9aef733-ee6f-4619-a5c9-14ac4d08afd2-00-wo2y4fr20qlt.pike.replit.dev/debug", {
 method: "POST",
-headers: {
-"Authorization": "Bearer " + debuggerKey,
-"Content-Type": "application/json"
-},
-body: JSON.stringify(body)
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ code }),
 });
 if (!res.ok) {
 debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}: ${res.status === 429 ? "Too Many Requests. Try Again Later." : res.statusText}</div>`;
@@ -836,5 +816,6 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
 
 
