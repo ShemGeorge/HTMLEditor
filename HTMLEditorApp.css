@@ -55,16 +55,23 @@ cursor: pointer !important;
 transition: all 0.2s ease !important;
 }
 
-#consoleOutput {
+#debuggerPanelHolder {
 white-space: pre;
 font-family: monospace;
 font-size: 10px;
-width: calc(1500 / 1536 * 100vw);
-height: calc(150 / 695 * 100vh);
+width: calc(735 / 1536 * 100vw);
+height: calc(334 / 695 * 100vh);
 padding: 10px;
 overflow-y: auto;
 overflow-x: auto;
 background: #1a1a1a;
+}
+
+.error-text {
+color: #f00;
+}
+
+.fix-text {
 color: #0f0;
 }
 
@@ -78,8 +85,8 @@ height: calc(668 / 695 * 100vh);
 padding: 10px;
 border: 1px solid black;
 caret-color: black;
-overflow-y: auto;
-overflow-x: auto;
+overflow-y: scroll;
+overflow-x: scroll;
 }
 
 #code:focus {
@@ -197,4 +204,3 @@ a:hover {
 color: blue;
 text-decoration: underline;
 }
-
