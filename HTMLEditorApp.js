@@ -1,6 +1,6 @@
 var defaultTitle = document.title;
 var unsavedChanges = false;
-const debuggerKey = "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";
+const debuggerKey = "";
 
 window.addEventListener("beforeunload", (e) => {
 if (unsavedChanges) {
@@ -836,3 +836,4 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
