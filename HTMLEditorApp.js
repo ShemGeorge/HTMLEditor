@@ -1,6 +1,6 @@
 var defaultTitle = document.title;
 var unsavedChanges = false;
-const debuggerKey = "";
+const debuggerKey = process.env.OPENROUTER_API_KEY;
 
 window.addEventListener("beforeunload", (e) => {
 if (unsavedChanges) {
@@ -836,4 +836,5 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
 
