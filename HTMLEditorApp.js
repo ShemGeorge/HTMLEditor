@@ -27,6 +27,7 @@ code.setAttribute("style", "background-color: white; color: black; caret-color: 
 document.querySelector(".line-numbers").setAttribute("style", "background-color: white; color: #444;");
 document.querySelector(".code-wrapper").setAttribute("style", "border: 1px solid black; background-color: white;");
 document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #fff8f0");
+syntaxHighlight(document.getElementById("fixedCode"), "html");
 document.querySelectorAll("button").forEach(button => {
 button.style.background = "linear-gradient(135deg, #A5D6A7, #81C784)";
 button.style.color = "black";
@@ -43,6 +44,7 @@ code.setAttribute("style", "background-color: rgb(60, 60, 60); color: white; car
 document.querySelector(".line-numbers").setAttribute("style", "background-color: #222; color: #DCDCDC;");
 document.querySelector(".code-wrapper").setAttribute("style", "border: 1px solid #ccc; background-color: #222;");
 document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #1a1a1a");
+syntaxHighlight(document.getElementById("fixedCode"), "html");
 document.querySelectorAll("button").forEach(button => {
 button.style.background = "linear-gradient(135deg, #2E7D32, #43A047)";
 button.style.color = "white";
@@ -131,6 +133,7 @@ code.setAttribute("style", "background-color: white; color: black; caret-color: 
 document.querySelector(".line-numbers").setAttribute("style", "background-color: white; color: #444;");
 document.querySelector(".code-wrapper").setAttribute("style", "border: 1px solid black; background-color: white;");
 document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #fff8f0");
+syntaxHighlight(document.getElementById("fixedCode"), "html");
 document.querySelectorAll("button").forEach(button => {
 button.style.background = "linear-gradient(135deg, #A5D6A7, #81C784)";
 button.style.color = "black";
@@ -147,6 +150,7 @@ code.setAttribute("style", "background-color: rgb(60, 60, 60); color: white; car
 document.querySelector(".line-numbers").setAttribute("style", "background-color: #222; color: #DCDCDC;");
 document.querySelector(".code-wrapper").setAttribute("style", "border: 1px solid #ccc; background-color: #222;");
 document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #1a1a1a");
+syntaxHighlight(document.getElementById("fixedCode"), "html");
 document.querySelectorAll("button").forEach(button => {
 button.style.background = "linear-gradient(135deg, #2E7D32, #43A047)";
 button.style.color = "white";
@@ -821,3 +825,4 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
