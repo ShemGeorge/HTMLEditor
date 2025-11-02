@@ -7,12 +7,13 @@ It allows you to write, edit, and preview HTML projects with syntax highlighting
 
 ## Features
 
-- Live HTML preview in real-time  
-- Syntax highlighting for HTML, CSS, and JavaScript  
-- Save, load, and export your projects  
-- Light/Dark themes  
-- Tutorials tab for learning HTML/CSS/JS  
-- Fullscreen preview mode  
+- Live HTML preview in real-time
+- Syntax highlighting for HTML, CSS, and JavaScript
+- Save, load, and export your projects
+- Light/Dark themes
+- Tutorials tab for learning HTML/CSS/JS
+- Fullscreen preview mode
+- AI HTML code debugging for free (50 request limit per day)
 
 ---
 
