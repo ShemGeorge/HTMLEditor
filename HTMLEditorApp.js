@@ -323,13 +323,15 @@ debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}: ${res.st
 return;
 }
 const data = await res.json();
-let text = data.choices?.[0]?.message?.content || "No response";
+let text = data.choices?.[0]?.message?.content;
+if (!text || text.trim() === "") {
+debuggerPanel.innerHTML = `<div class="error-text">No response from AI. Probably because your 50-request limit is reached for today.</div>`;
+return;
+}
 text = text.replace(/```(html|js|javascript|css)?/gi, "").replace(/```/g, "").trim();
 const errorMatch = text.match(/ERROR:\s*([\s\S]*?)SUGGESTED FIX:/i);
 const fixMatch = text.match(/SUGGESTED FIX:\s*([\s\S]*?)FULL CORRECTED CODE:/i);
 const codeMatch = text.match(/FULL CORRECTED CODE:\s*([\s\S]*)/i);
-const errorText = errorMatch ? errorMatch[1].trim() : "No error found.";
-const fixText = fixMatch ? fixMatch[1].trim() : "No suggested fix found.";
 const codeText = codeMatch ? codeMatch[1].trim() : "";
 debuggerPanel.innerHTML = `<div class="error-text"><u>ERROR</u>:<br> ${errorText.textify()}</div>
 <div class="fix-text"><u>SUGGESTED FIX</u>:<br> ${fixText.textify()}</div><br><u style="color: #0f0;">FULL FIXED CODE</u>:`;
@@ -825,5 +827,3 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
-
-
