@@ -64,7 +64,8 @@ height: calc(334 / 695 * 100vh);
 padding: 10px;
 overflow-y: auto;
 overflow-x: auto;
-background: #1a1a1a;
+background: #f8f9fb;
+border: 1px solid black;
 }
 
 .error-text {
