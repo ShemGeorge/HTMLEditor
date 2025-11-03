@@ -313,6 +313,7 @@ var fixedCode = document.getElementById("fixedCode");
 debuggerPanel.innerHTML = "Please wait while we process your code...";
 fixedCode.textContent = "";
 try {
+await fetch("https://html-editor-backend.vercel.app/api/health").catch(() => {});
 const res = await fetch("https://html-editor-backend.vercel.app/debug", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
@@ -332,6 +333,8 @@ text = text.replace(/```(html|js|javascript|css)?/gi, "").replace(/```/g, "").tr
 const errorMatch = text.match(/ERROR:\s*([\s\S]*?)SUGGESTED FIX:/i);
 const fixMatch = text.match(/SUGGESTED FIX:\s*([\s\S]*?)FULL CORRECTED CODE:/i);
 const codeMatch = text.match(/FULL CORRECTED CODE:\s*([\s\S]*)/i);
+const errorText = errorMatch[1].trim();
+const fixText = fixMatch[1].trim();
 const codeText = codeMatch ? codeMatch[1].trim() : "";
 debuggerPanel.innerHTML = `<div class="error-text"><u>ERROR</u>:<br> ${errorText.textify()}</div>
 <div class="fix-text"><u>SUGGESTED FIX</u>:<br> ${fixText.textify()}</div><br><u style="color: #0f0;">FULL FIXED CODE</u>:`;
@@ -827,3 +830,4 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
