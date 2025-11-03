@@ -313,7 +313,7 @@ var fixedCode = document.getElementById("fixedCode");
 debuggerPanel.innerHTML = "Please wait while we process your code...";
 fixedCode.textContent = "";
 try {
-await fetch("https://html-editor-backend.vercel.app/api/health").catch(() => {});
+await fetch("https://html-editor-backend.vercel.app/").catch(() => {});
 const res = await fetch("https://html-editor-backend.vercel.app/debug", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
@@ -830,4 +830,5 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
 
