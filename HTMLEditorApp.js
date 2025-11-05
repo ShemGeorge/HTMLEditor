@@ -324,6 +324,7 @@ debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}: ${res.st
 return;
 }
 const data = await res.json();
+alert(`⚠️ Requests left today: ${data.requestsLeft}`);
 let text = data.choices?.[0]?.message?.content;
 if (!text || text.trim() === "") {
 debuggerPanel.innerHTML = `<div class="error-text">No response from AI. Probably because your 50-request limit is reached for today.</div>`;
@@ -342,6 +343,9 @@ fixedCode.innerHTML = codeText.textify();
 syntaxHighlight(fixedCode, "html");
 } catch (err) {
 debuggerPanel.innerHTML = `<div class="error-text">Error: ${err.message}</div>`;
+if (err?.response?.requestsLeft !== undefined) {
+alert(`⚠️ Requests left today: ${err.response.requestsLeft}`);
+}
 }
 }
 
@@ -830,5 +834,6 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
 
 
