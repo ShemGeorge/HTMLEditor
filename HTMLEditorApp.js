@@ -326,18 +326,26 @@ return;
 const data = await res.json();
 let text = data.choices?.[0]?.message?.content;
 if (!text || text.trim() === "") {
-debuggerPanel.innerHTML = `<div class="error-text">No response from AI. Probably because your 50-request limit is reached for today.</div>`;
+const requestsRemaining = data.remainingRequests;
+let msg;
+if (requestsRemaining == null) {
+msg = "AI model used for debugging is currently overloaded. Please try again later.";
+}
+else if (parseInt(requestsRemaining) === 0) {
+msg = "Your 50-request limit is over for today. Please try again tomorrow.";
+}
+debuggerPanel.innerHTML = `<div class="error-text">${msg}</div>`;
 return;
 }
 text = text.replace(/```(html|js|javascript|css)?/gi, "").replace(/```/g, "").trim();
-const errorMatch = text.match(/ERROR:\s*([\s\S]*?)SUGGESTED FIX:/i);
-const fixMatch = text.match(/SUGGESTED FIX:\s*([\s\S]*?)FULL FIXED CODE:/i);
+const errorMatch = text.match(/ERRORS:\s*([\s\S]*?)SUGGESTED FIXES:/i);
+const fixMatch = text.match(/SUGGESTED FIXES:\s*([\s\S]*?)FULL FIXED CODE:/i);
 const codeMatch = text.match(/FULL FIXED CODE:\s*([\s\S]*)/i);
 const errorText = errorMatch[1].trim();
 const fixText = fixMatch[1].trim();
 const codeText = codeMatch ? codeMatch[1].trim() : "";
-debuggerPanel.innerHTML = `<div class="error-text"><u>ERROR</u>:<br> ${errorText.textify()}</div>
-<div class="fix-text"><u>SUGGESTED FIX</u>:<br> ${fixText.textify()}</div><br><u style="color: #0f0;">FULL FIXED CODE</u>:<span style="float: right; color: #4AA8FF; cursor: pointer; text-decoration: underline;" onclick="copyFixedCode()">(Copy Fixed Code)</span>`;
+debuggerPanel.innerHTML = `<div class="error-text"><u>ERRORS</u>:<br> ${errorText.textify()}</div>
+<div class="fix-text"><u>SUGGESTED FIXES</u>:<br> ${fixText.textify()}</div><br><u style="color: #0f0;">FULL FIXED CODE</u>:<span style="float: right; color: #4AA8FF; cursor: pointer; text-decoration: underline;" onclick="copyFixedCode()">(Copy Fixed Code)</span>`;
 fixedCode.innerHTML = codeText.textify();
 syntaxHighlight(fixedCode, "html");
 } catch (err) {
@@ -841,6 +849,7 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
 
 
 
