@@ -320,7 +320,7 @@ headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ code }),
 });
 if (!res.ok) {
-debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}: ${res.status === 429 ? "Too Many Requests. Try Again Later." : res.statusText}</div>`;
+debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}: ${res.statusText}</div>`;
 return;
 }
 const data = await res.json();
@@ -849,6 +849,7 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
 
 
 
