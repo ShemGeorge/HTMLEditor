@@ -23,21 +23,30 @@
       "HTMLEditorApp.js",
       "appSyntaxHighlighting.css",
       "appSyntaxHighlighting.js",
-      "HTMLEditorApp.ico"
+      "HTMLEditorApp.ico",
+      "HTMLEditorApp.png",
+      "HTMLEditorApp.icns"
     ],
     "win": {
       "target": "nsis",
-      "artifactName": "${productName}.Setup.${version}.exe",
+      "artifactName": "${productName}.Setup.${version}.Windows.exe",
       "icon": "HTMLEditorApp.ico"
     },
     "mac": {
       "target": "dmg",
+      "artifactName": "${productName}.${version}.Mac.dmg",
       "icon": "HTMLEditorApp.icns"
     },
     "linux": {
       "target": [
-        "AppImage",
-        "deb"
+        {
+          "target": "AppImage",
+          "artifactName": "${productName}.${version}.Linux.AppImage"
+        },
+        {
+          "target": "deb",
+          "artifactName": "${productName}.${version}.Linux.deb"
+        }
       ],
       "icon": "HTMLEditorApp.png"
     },
