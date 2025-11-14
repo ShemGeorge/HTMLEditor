@@ -40,7 +40,7 @@
         "deb"
       ],
       "icon": "HTMLEditorApp.png"
-    }
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": true,
