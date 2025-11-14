@@ -2,7 +2,10 @@
   "name": "htmleditor",
   "version": "1.0.0",
   "main": "main.js",
-  "author": "Shem",
+  "author": {
+    "name": "Shem",
+    "email": "shems.harmony@gmail.com"
+  },
   "description": "HTMLEditor",
   "scripts": {
     "start": "electron .",
@@ -11,7 +14,7 @@
   },
   "devDependencies": {
     "electron": "^36.2.0",
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^25.1.8"
   },
   "build": {
     "appId": "com.shem.htmleditor",
@@ -40,7 +43,8 @@
     "linux": {
       "target": ["AppImage", "deb"],
       "artifactName": "${productName}.${version}.Linux.${ext}",
-      "icon": "HTMLEditorApp.png"
+      "icon": "HTMLEditorApp.png",
+      "maintainer": "Shem <shems.harmony@gmail.com>"
     },
     "nsis": {
       "oneClick": false,
