@@ -30,6 +30,17 @@
       "artifactName": "${productName}.Setup.${version}.exe",
       "icon": "HTMLEditorApp.ico"
     },
+    "mac": {
+      "target": "dmg",
+      "icon": "HTMLEditorApp.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "HTMLEditorApp.png"
+    }
     "nsis": {
       "oneClick": false,
       "perMachine": true,
