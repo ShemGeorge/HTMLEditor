@@ -16,6 +16,9 @@ if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
 localStorage.setItem("HEcodes", "[]");
 }
 loadTheme().then(theme => {
+if (!theme) {
+storeTheme();
+}
 if (theme == "light") {
 themeOBJ.value = "light";
 codeSelection.innerHTML = "#code::selection, #code *::selection { background: #b3e5fc; }";
@@ -849,3 +852,4 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
+
