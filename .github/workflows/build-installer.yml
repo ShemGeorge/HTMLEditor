@@ -1,4 +1,4 @@
-name: Build HTMLEditor Installer
+name: Build HTMLEditor Installers
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
       - run: npm run dist -- --publish never
       - uses: actions/upload-artifact@v4
         with:
-          name: HTMLEditor-Installers
+          name: HTMLEditor-Windows
           path: dist/*.exe
 
   build-macos:
@@ -32,7 +32,7 @@ jobs:
       - run: npm run dist -- --publish never
       - uses: actions/upload-artifact@v4
         with:
-          name: HTMLEditor-Installers
+          name: HTMLEditor-Mac
           path: dist/*.dmg
 
   build-linux:
@@ -46,7 +46,7 @@ jobs:
       - run: npm run dist -- --publish never
       - uses: actions/upload-artifact@v4
         with:
-          name: HTMLEditor-Installers
+          name: HTMLEditor-Linux
           path: |
             dist/*.AppImage
             dist/*.deb
