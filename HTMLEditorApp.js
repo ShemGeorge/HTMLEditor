@@ -852,4 +852,3 @@ showCodes();
 function updateText(element) {
 unsavedChanges = element.textContent.length > 0;
 }
-
