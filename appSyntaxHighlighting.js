@@ -36,6 +36,7 @@ function syntaxHighlight(element, mode) {
 var div = document.createElement("div");
 var theme = document.getElementById("theme");
 div.textContent = element.textContent;
+div.innerHTML = disableHTMLCommentsInScriptAndStyle(div.innerHTML)
 if (mode == "html") {
 if (element.textContent == "") {
 element.innerHTML = null;
@@ -60,7 +61,44 @@ else {
 element.innerHTML = jsMode(div.innerHTML);
 }
 }
-
+function disableHTMLCommentsInScriptAndStyle(txt) {
+let out = "";
+let pos = 0;
+const openTagRegex = /&lt;(script|style)\b/gi;
+let match;
+while ((match = openTagRegex.exec(txt)) !== null) {
+let start = match.index;
+out += txt.substring(pos, start);
+let openTagEnd = txt.indexOf("&gt;", start);
+if (openTagEnd === -1) openTagEnd = txt.length;
+let blockStart = openTagEnd + 4;
+const tagName = match[1].toLowerCase();
+const closeTagRegex = new RegExp(`&lt;\\s*\\/${tagName}\\s*&gt;`, "i");
+const closingMatch = closeTagRegex.exec(txt.slice(blockStart));
+let blockEnd;
+if (closingMatch) {
+blockEnd = blockStart + closingMatch.index;
+} else {
+blockEnd = txt.length;
+}
+let inner = txt.substring(blockStart, blockEnd);
+inner = inner.replace(/&lt;!--/g, "&lt;<span></span>!--");
+out += txt.substring(start, blockStart) + inner;
+if (closingMatch) {
+const closingTagStart = blockEnd;
+const closingTagEnd = blockEnd + closingMatch[0].length;
+out += txt.substring(closingTagStart, closingTagEnd);
+pos = closingTagEnd;
+openTagRegex.lastIndex = closingTagEnd;
+}
+else {
+pos = txt.length;
+break;
+}
+}
+out += txt.substring(pos);
+return out;
+}
 function extract(str, start, end, func, repl) {
 var s, e, d = "", a = [];
 while (str.search(start) > -1) {
@@ -78,24 +116,6 @@ str = str.substr(e + (end.length));
 }
 this.rest = d + str;
 this.arr = a;
-}
-function extractHTMLCommentsFromStyleAndScript(html) {
-var dummyDiv = document.createElement("div");
-dummyDiv.innerHTML = html;
-var dummySpan = document.createElement("span");
-var comments = []; 
-var regex = /<(script|style)[^>]*>([\s\S]*?)(?=<\/\1>|$)/gi;
-var match;
-while ((match = regex.exec(dummyDiv.textContent)) !== null) {
-var content = match[2];
-var commentRegex = /(<!--[\s\S]*?-->)/g;
-var commentMatch;
-while ((commentMatch = commentRegex.exec(content)) !== null) {
-dummySpan.textContent = commentMatch[1];
-comments.push(dummySpan.innerHTML);
-}
-}
-return comments;
 }
 function unwrapComment(comment, html) {
 var regex = new RegExp(`<span class=['"]?(comment-light|comment-dark)['"]?>(\\s*${comment}\\s*)</span>`, 'g');
@@ -116,8 +136,8 @@ continue;
 }
 note = "";
 startpos = rest.indexOf("&lt;");
-if (rest.substr(startpos, 9).toUpperCase() == "&LT;STYLE") {note = "css";}
-if (rest.substr(startpos, 10).toUpperCase() == "&LT;SCRIPT") {note = "javascript";}
+if (rest.substr(startpos, 9).toUpperCase() === "&LT;STYLE" && (rest.substr(startpos + 9, 4).toUpperCase().startsWith("&GT;") || rest.charAt(startpos + 9) === " ")) {note = "css";}
+if (rest.substr(startpos, 10).toUpperCase() === "&LT;SCRIPT" && ( rest.substr(startpos + 10, 4).toUpperCase().startsWith("&GT;") || rest.charAt(startpos + 10) === " " )) {note = "javascript";}
 endpos = rest.indexOf("&gt;", startpos);
 if (endpos == -1) {endpos = rest.length;}
 done += rest.substring(0, startpos);
@@ -143,10 +163,6 @@ rest = rest.substr(endpos);
 rest = done + rest;
 for (i = 0; i < comment.arr.length; i++) {
 rest = rest.replace("htmlComment", comment.arr[i]);
-}
-var invalidHTMLComments = extractHTMLCommentsFromStyleAndScript(rest);
-for (var i = 0; i < invalidHTMLComments.length; i++) {
-rest = unwrapComment(invalidHTMLComments[i], rest);
 }
 return rest;
 }
