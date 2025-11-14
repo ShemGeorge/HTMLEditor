@@ -24,7 +24,7 @@ It allows you to write, edit, and preview HTML projects with syntax highlighting
 ## How to Get the App
 
 1. Go to the **[Releases](https://github.com/ShemGeorge/HTMLEditor/releases)** page.  
-2. Download the latest zip file according to you operating system (Windows, Linux or MacOS).  
+2. Download the latest zip file according to your operating system (Windows, Linux or MacOS).  
 3. Run the installer and follow the prompts.  
 4. Once installed, open **HTMLEditor** from your desktop or start menu.  
 
