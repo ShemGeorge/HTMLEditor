@@ -38,16 +38,8 @@
       "icon": "HTMLEditorApp.icns"
     },
     "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "artifactName": "${productName}.${version}.Linux.AppImage"
-        },
-        {
-          "target": "deb",
-          "artifactName": "${productName}.${version}.Linux.deb"
-        }
-      ],
+      "target": ["AppImage", "deb"],
+      "artifactName": "${productName}.${version}.Linux.${ext}",
       "icon": "HTMLEditorApp.png"
     },
     "nsis": {
