@@ -1,5 +1,7 @@
 var defaultTitle = document.title;
 var unsavedChanges = false;
+var undoStack = [];
+var redoStack = [];
 
 window.addEventListener("beforeunload", (e) => {
 if (unsavedChanges) {
@@ -18,41 +20,10 @@ localStorage.setItem("HEcodes", "[]");
 loadTheme().then(theme => {
 if (!theme) {
 storeTheme();
+theme = "dark";
 }
-if (theme == "light") {
-themeOBJ.value = "light";
-codeSelection.innerHTML = "#code::selection, #code *::selection { background: #b3e5fc; }";
-document.getElementById("HEspecialtag1").setAttribute("style", "background-color: white;");
-document.getElementById("HEspecialtag2").setAttribute("style", "background-color: white;");
-document.body.setAttribute("style", "background-color: white; color: black;");
-document.getElementById("result").setAttribute("style", "background-color: white;");
-code.setAttribute("style", "background-color: white; color: black; caret-color: black;");
-document.querySelector(".line-numbers").setAttribute("style", "background-color: white; color: #444;");
-document.querySelector(".code-wrapper").setAttribute("style", "border: 1px solid black; background-color: white;");
-document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #fff8f0");
-syntaxHighlight(document.getElementById("fixedCode"), "html");
-document.querySelectorAll("button").forEach(button => {
-button.style.background = "linear-gradient(135deg, #A5D6A7, #81C784)";
-button.style.color = "black";
-});
-}
-else if (theme == "dark") {
-themeOBJ.value = "dark";
-codeSelection.innerHTML = "#code::selection, #code *::selection { background: #264f78; }";
-document.getElementById("HEspecialtag1").setAttribute("style", "background-color: rgb(60, 60, 60);");
-document.getElementById("HEspecialtag2").setAttribute("style", "background-color: rgb(60, 60, 60);");
-document.body.setAttribute("style", "background-color: black; color: white;");
-document.getElementById("result").setAttribute("style", "background-color: white;");
-code.setAttribute("style", "background-color: rgb(60, 60, 60); color: white; caret-color: white;");
-document.querySelector(".line-numbers").setAttribute("style", "background-color: #222; color: #DCDCDC;");
-document.querySelector(".code-wrapper").setAttribute("style", "border: 1px solid #ccc; background-color: #222;");
-document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #1a1a1a");
-syntaxHighlight(document.getElementById("fixedCode"), "html");
-document.querySelectorAll("button").forEach(button => {
-button.style.background = "linear-gradient(135deg, #2E7D32, #43A047)";
-button.style.color = "white";
-});
-}
+themeOBJ.value = theme;
+storeTheme();
 syntaxHighlight(code, "html");
 syntaxHighlight(document.getElementById("HEspecialtag1"), "html");
 syntaxHighlight(document.getElementById("HEspecialtag2"), "html");
@@ -63,6 +34,17 @@ document.getElementById("result").blur();
 scrollTo(0, 0);
 code.addEventListener("scroll", function() {
 document.getElementById("lineList").parentElement.scrollTop = code.scrollTop;
+});
+code.addEventListener("beforeinput", saveCodeSnapshot);
+code.addEventListener("keydown", function(e) {
+if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
+e.preventDefault();
+undo();
+}
+if ((e.ctrlKey && e.key.toLowerCase() === 'y') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z')) {
+e.preventDefault();
+redo();
+}
 });
 }
 
@@ -207,6 +189,119 @@ var notReal = document.createElement("span");
 notReal.textContent = this;
 return notReal.innerHTML;
 notReal = null;
+}
+
+function saveCodeSnapshot() {
+const code = document.getElementById("code");
+const sel = window.getSelection();
+let range = null;
+if (sel.rangeCount > 0) {
+const r = sel.getRangeAt(0);
+if (code.contains(r.startContainer) && code.contains(r.endContainer)) {
+range = r;
+}
+}
+const snapshot = {
+text: code.textContent,
+selection: null,
+scrollTop: code.scrollTop
+};
+if (range) {
+snapshot.selection = {
+startContainerPath: getNodePath(range.startContainer, code),
+startOffset: range.startOffset,
+endContainerPath: getNodePath(range.endContainer, code),
+endOffset: range.endOffset
+};
+}
+undoStack.push(snapshot);
+redoStack = [];
+}
+
+function restoreSnapshot(snapshot) {
+const code = document.getElementById("code");
+if (snapshot.text !== undefined) {
+code.textContent = snapshot.text;
+syntaxHighlightContentEditableElement(code, "html");
+updateText(code);
+updateLineNumbers(code, document.getElementById("lineList"));
+}
+if (typeof snapshot.scrollTop === "number") {
+code.scrollTop = snapshot.scrollTop;
+}
+if (snapshot.selection) {
+const sel = window.getSelection();
+sel.removeAllRanges();
+const range = document.createRange();
+const startNode = getNodeFromPath(snapshot.selection.startContainerPath, code);
+const endNode = getNodeFromPath(snapshot.selection.endContainerPath, code);
+if (startNode && endNode) {
+range.setStart(startNode, Math.min(snapshot.selection.startOffset, startNode.textContent.length));
+range.setEnd(endNode, Math.min(snapshot.selection.endOffset, endNode.textContent.length));
+sel.addRange(range);
+}
+}
+}
+
+
+function getNodePath(node, root) {
+const path = [];
+while (node && node !== root) {
+const parent = node.parentNode;
+path.unshift(Array.from(parent.childNodes).indexOf(node));
+node = parent;
+}
+return path;
+}
+
+function getNodeFromPath(path, root) {
+let node = root;
+for (let i = 0; i < path.length; i++) {
+if (!node.childNodes[path[i]]) return null;
+node = node.childNodes[path[i]];
+}
+return node;
+}
+
+function getCurrentSelectionSnapshot() {
+const code = document.getElementById("code");
+const sel = window.getSelection();
+if (sel.rangeCount === 0) {
+return null;
+}
+const range = sel.getRangeAt(0);
+return {
+startContainerPath: getNodePath(range.startContainer, code),
+startOffset: range.startOffset,
+endContainerPath: getNodePath(range.endContainer, code),
+endOffset: range.endOffset
+};
+}
+
+function applySnapshot(fromStack, toStack) {
+const code = document.getElementById("code");
+if (fromStack.length === 0) {
+return;
+}
+const snapshot = fromStack.pop();
+toStack.push({
+text: code.textContent,
+selection: getCurrentSelectionSnapshot(),
+scrollTop: code.scrollTop
+});
+restoreSnapshot(snapshot);
+document.getElementById("container").scrollIntoView({
+behavior: "smooth",
+block: "start"
+});
+}
+
+function undo() {
+applySnapshot(undoStack, redoStack);
+}
+
+function redo() {
+applySnapshot(redoStack, undoStack);
 }
 
 function showCodes() {
