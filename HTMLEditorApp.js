@@ -589,6 +589,8 @@ document.title = defaultTitle;
 updateText(code);
 syntaxHighlight(code, "html");
 clearDebuggerPanel();
+undoStack = [];
+redoStack = [];
 }
 }
 else {
@@ -599,6 +601,8 @@ document.title = defaultTitle;
 updateText(code);
 syntaxHighlight(code, "html");
 clearDebuggerPanel();
+undoStack = [];
+redoStack = [];
 }
 }
 
@@ -612,6 +616,8 @@ document.title = defaultTitle;
 updateText(code);
 syntaxHighlight(code, "html");
 clearDebuggerPanel();
+undoStack = [];
+redoStack = [];
 }
 
 function openTutorial() {
