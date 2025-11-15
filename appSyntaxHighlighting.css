@@ -1,21 +1,21 @@
 .comment-light {
-color: #888888;
+color: #6e6e6e;
 }
 
 .html-doctype-light {
-color: #0000ff;
+color: #0033cc;
 }
 
 .html-bracket-light, .html-close-light {
-color: #006b62;
+color: #b72bad;
 }
 
 .html-tag-light {
-color: #d500f9;
+color: #008c9e;
 }
 
 .html-attribute-light {
-color: #ff8c00;
+color: #ff7f2a;
 }
 
 .html-attributeEquals-light {
@@ -23,43 +23,43 @@ color: black;
 }
 
 .html-attributeValue-light {
-color: #1e40af;
+color: #005fcf;
 }
 
 .css-selector-light {
-color: #d000ff;
+color: #8a2be2;
 }
 
 .css-delimiter-light {
-color: #e63946;
+color: #e57373;
 }
 
 .css-property-light {
-color: #0080ff;
+color: #2e8b57;
 }
 
 .css-propertyValue-light {
-color: #00c853;
+color: #c59e00;
 }
 
 .javascript-string-light {
-color: #55aa55;
+color: #228b22;
 }
 
 .javascript-keyword-light {
-color: #ff1744;
+color: #d50000;
 }
 
 .javascript-number-light {
-color: #7c4dff;
+color: #673ab7;
 }
 
 .javascript-property-light {
-color: #00acc1;
+color: #0081a7;
 }
 
 .javascript-regularExpression-light {
-color: #006b62;
+color: #b72bad;
 }
 
 .comment-dark {
