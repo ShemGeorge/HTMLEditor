@@ -18,7 +18,7 @@ if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
 localStorage.setItem("HEcodes", "[]");
 }
 loadTheme().then(theme => {
-if (!theme) {
+if (theme !== "dark" && theme!== "light") {
 storeTheme();
 theme = "dark";
 }
