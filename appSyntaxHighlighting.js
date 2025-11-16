@@ -117,14 +117,9 @@ str = str.substr(e + (end.length));
 this.rest = d + str;
 this.arr = a;
 }
-function unwrapComment(comment, html) {
-var regex = new RegExp(`<span class=['"]?(comment-light|comment-dark)['"]?>(\\s*${comment}\\s*)</span>`, 'g');
-var unwrappedHtml = html.replace(regex, comment);
-return unwrappedHtml;
-}
 function htmlMode(txt) {
 var rest = txt, done = "", php, comment, angular, startpos, endpos, note, i;
-comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "htmlComment");
+comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "<htmlComment></htmlComment>");
 rest = comment.rest;
 while (rest.indexOf("&lt;") > -1) {
 if (/^\s*&LT;!DOCTYPE/i.test(rest)) {
@@ -162,7 +157,7 @@ rest = rest.substr(endpos);
 }
 rest = done + rest;
 for (i = 0; i < comment.arr.length; i++) {
-rest = rest.replace("htmlComment", comment.arr[i]);
+rest = rest.replace("<htmlComment></htmlComment>", comment.arr[i]);
 }
 return rest;
 }
@@ -217,7 +212,7 @@ return "<span class='comment-" + theme.value + "'>" + txt + "</span>";
 }
 function cssMode(txt) {
 var rest = txt, done = "", s, e, comment, i, midz, c, cc;
-comment = new extract(rest, /\/\*/, "*/", commentMode, "cssComment");
+comment = new extract(rest, /\/\*/, "*/", commentMode, "<cssComment></cssComment>");
 rest = comment.rest;
 while (rest.search("{") > -1) {
 s = rest.search("{");
@@ -243,7 +238,7 @@ rest = done + rest;
 rest = rest.replace(/{/g, "<span class='css-delimiter-" + theme.value + "'>{</span>");
 rest = rest.replace(/}/g, "<span class='css-delimiter-" + theme.value + "'>}</span>");
 for (i = 0; i < comment.arr.length; i++) {
-rest = rest.replace("cssComment", comment.arr[i]);
+rest = rest.replace("<cssComment></cssComment>", comment.arr[i]);
 }
 return "<span class='css-selector-" + theme.value + "'>" + rest + "</span>";
 }
@@ -284,7 +279,7 @@ for (i = 0; i < rest.length; i++){
 cc = rest.substr(i, 1);
 if (cc == "\\") {
 esc.push(rest.substr(i, 2));
-cc = "javascriptEscape";
+cc = "<javascriptEscape></javascriptEscape>";
 i++;
 }
 tt += cc;
@@ -312,7 +307,7 @@ rest = rest.substr(mypos[1]);
 }
 rest = done + rest;
 for (i = 0; i < esc.length; i++) {
-rest = rest.replace("javascriptEscape", esc[i]);
+rest = rest.replace("<javascriptEscape></javascriptEscape>", esc[i]);
 }
 return rest;
 }
