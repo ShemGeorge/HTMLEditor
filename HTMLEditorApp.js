@@ -910,7 +910,7 @@ document.title = "Random Number Show (Tutorial) - " + defaultTitle;
 if (jsCanvas.selected == true) {
 code.textContent = jsCanvasCode;
 codeName.value = "JS Canvas (Tutorial)";
-document.title = "JS Canvas (Tutorial)";
+document.title = "JS Canvas (Tutorial) - " + defaultTitle;
 }
 if (propertyAsAFunctionInJs.selected == true) {
 code.textContent = propertyAsAFunctionInJsCode;
