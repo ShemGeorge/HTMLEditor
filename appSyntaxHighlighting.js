@@ -61,6 +61,7 @@ else {
 element.innerHTML = jsMode(div.innerHTML);
 }
 }
+element.innerHTML = element.innerHTML.replace(/\u2063/g, "");
 function disableHTMLCommentsInScriptAndStyle(txt) {
 let out = "";
 let pos = 0;
@@ -82,7 +83,7 @@ blockEnd = blockStart + closingMatch.index;
 blockEnd = txt.length;
 }
 let inner = txt.substring(blockStart, blockEnd);
-inner = inner.replace(/&lt;!--/g, "&lt;<span></span>!--");
+inner = inner.replace(/&lt;!--/g, "&lt;\u2063!--");
 out += txt.substring(start, blockStart) + inner;
 if (closingMatch) {
 const closingTagStart = blockEnd;
@@ -274,13 +275,40 @@ result = result.substring(0, result.length - 1) + "<span class='css-delimiter-" 
 return "<span class='css-propertyValue-" + theme.value + "'>" + result + "</span>";
 }
 function jsMode(txt) {
-var rest = txt, done = "", esc = [], i, cc, tt = "", sfnuttpos, dfnuttpos, tfnuttpos, compos, comlinepos, regexpos, keywordpos, numpos, mypos, dotpos, y;
-for (i = 0; i < rest.length; i++){
-cc = rest.substr(i, 1);
-if (cc == "\\") {
-esc.push(rest.substr(i, 2));
+var rest = txt, done = "", commentRanges = [], idx = 0, escNormal = [], escNewline = [], i, cc, tt = "", sfnuttpos, dfnuttpos, tfnuttpos, compos, comlinepos, regexpos, keywordpos, numpos, mypos, dotpos, y;
+while (idx < rest.length) {
+let start = rest.indexOf("/*", idx);
+if (start === -1) {
+break;
+}
+let end = rest.indexOf("*/", start + 2);
+if (end === -1) {
+end = rest.length;
+}
+else end += 2;
+commentRanges.push({ start, end });
+idx = end;
+}
+for (let i = 0; i < rest.length; i++) {
+let cc = rest[i];
+let inMultilineComment = false;
+for (let c = 0; c < commentRanges.length; c++) {
+if (i >= commentRanges[c].start && i < commentRanges[c].end) {
+inMultilineComment = true;
+break;
+}
+}
+if (cc === "\\" && !inMultilineComment) {
+if (i + 1 < rest.length && rest[i + 1] === "\n") {
+escNewline.push("\\\n");
+cc = "\uF004";
+i += 1;
+}
+else if (i + 1 < rest.length) {
+escNormal.push(rest.substr(i, 2));
 cc = "\uF003";
-i++;
+i += 1;
+}
 }
 tt += cc;
 }
@@ -306,8 +334,11 @@ rest = rest.substr(mypos[1]);
 }
 }
 rest = done + rest;
-for (i = 0; i < esc.length; i++) {
-rest = rest.replace("\uF003", esc[i]);
+for (i = 0; i < escNormal.length; i++) {
+rest = rest.replace("\uF003", escNormal[i]);
+}
+for (i = 0; i < escNewline.length; i++) {
+rest = rest.replace("\uF004", escNewline[i]);
 }
 return rest;
 }
@@ -332,16 +363,13 @@ let match = txt.match(/\/(?:\\.|[^\n\/\\])*\/[gimsuy]*/);
 if (match) {
 pos1 = match.index;
 let regexBody = match[0];
+if (regexBody.includes("\uF004")) return [-1, -1, func];
 let lastSlashIndex = regexBody.lastIndexOf("/");
 let flags = regexBody.slice(lastSlashIndex + 1);
 let flagSet = new Set(flags);
-if (flagSet.size !== flags.length) {
-pos2 = pos1 + lastSlashIndex + 1;
-}
-else {
-pos2 = pos1 + regexBody.length;
-}
-if (pos1 > 0 && /\w/.test(txt[pos1 - 1])) {
+pos2 = (flagSet.size !== flags.length) ? pos1 + lastSlashIndex + 1 : pos1 + regexBody.length;
+let prevChar = txt[pos1 - 1] || "";
+if (/\w/.test(prevChar)) {
 pos1 = -1;
 pos2 = 0;
 }
@@ -395,14 +423,41 @@ rpos2 = rpos + words[i].length;
 return [rpos, rpos2, func];
 }
 function getPos(txt, start, end, func) {
-var s, e;
-s = txt.search(start);
-e = txt.indexOf(end, s + (end.length));
-if (e == -1) {
+let s = txt.search(start);
+if (s === -1) {
+return [-1, -1, func];
+}
+if (start === '"' || start === "'") {
+let i = s + 1;
+while (i < txt.length) {
+let ch = txt[i];
+if (ch === start) {
+let backslashCount = 0;
+let j = i - 1;
+while (j >= 0 && txt[j] === "\\") {
+backslashCount++;
+j--;
+}
+if (backslashCount % 2 === 0) {
+break;
+}
+}
+if (ch === "\n") {
+break;
+}
+i++;
+}
+return [s, i + 1, func];
+} 
+else {
+let e = txt.indexOf(end, s + (end.length || 0));
+if (e === -1) {
 e = txt.length;
 }
-return [s, e + (end.length), func];
+return [s, e + (end.length || 0), func];
 }
+}
+
 function getNumPos(txt, func) {
 var arr = ["\n", " ", ";", "(", "+", ")", "[", "]", ",", "&", ":", "{", "}", "/" ,"-", "*", "|", "%", "="], i, j, c, startpos = 0, endpos, word;
 for (i = 0; i < txt.length; i++) {
