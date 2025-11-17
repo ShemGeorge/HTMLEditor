@@ -119,7 +119,7 @@ this.arr = a;
 }
 function htmlMode(txt) {
 var rest = txt, done = "", php, comment, angular, startpos, endpos, note, i;
-comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "<htmlComment></htmlComment>");
+comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "\uF001");
 rest = comment.rest;
 while (rest.indexOf("&lt;") > -1) {
 if (/^\s*&LT;!DOCTYPE/i.test(rest)) {
@@ -157,7 +157,7 @@ rest = rest.substr(endpos);
 }
 rest = done + rest;
 for (i = 0; i < comment.arr.length; i++) {
-rest = rest.replace("<htmlComment></htmlComment>", comment.arr[i]);
+rest = rest.replace("\uF001", comment.arr[i]);
 }
 return rest;
 }
@@ -212,7 +212,7 @@ return "<span class='comment-" + theme.value + "'>" + txt + "</span>";
 }
 function cssMode(txt) {
 var rest = txt, done = "", s, e, comment, i, midz, c, cc;
-comment = new extract(rest, /\/\*/, "*/", commentMode, "<cssComment></cssComment>");
+comment = new extract(rest, /\/\*/, "*/", commentMode, "\uF002");
 rest = comment.rest;
 while (rest.search("{") > -1) {
 s = rest.search("{");
@@ -238,7 +238,7 @@ rest = done + rest;
 rest = rest.replace(/{/g, "<span class='css-delimiter-" + theme.value + "'>{</span>");
 rest = rest.replace(/}/g, "<span class='css-delimiter-" + theme.value + "'>}</span>");
 for (i = 0; i < comment.arr.length; i++) {
-rest = rest.replace("<cssComment></cssComment>", comment.arr[i]);
+rest = rest.replace("\uF002", comment.arr[i]);
 }
 return "<span class='css-selector-" + theme.value + "'>" + rest + "</span>";
 }
@@ -279,7 +279,7 @@ for (i = 0; i < rest.length; i++){
 cc = rest.substr(i, 1);
 if (cc == "\\") {
 esc.push(rest.substr(i, 2));
-cc = "<javascriptEscape></javascriptEscape>";
+cc = "\uF003";
 i++;
 }
 tt += cc;
@@ -307,7 +307,7 @@ rest = rest.substr(mypos[1]);
 }
 rest = done + rest;
 for (i = 0; i < esc.length; i++) {
-rest = rest.replace("<javascriptEscape></javascriptEscape>", esc[i]);
+rest = rest.replace("\uF003", esc[i]);
 }
 return rest;
 }
@@ -327,29 +327,26 @@ function jsPropertyMode(txt) {
 return "<span class='javascript-property-" + theme.value + "'>" + txt + "</span>";
 }
 function getRegexPos(txt, func) {
-var pos1, cc, pos2 = 0, mArr, i, len, patt, modOK = false;
-pos1 = txt.search(/\/.+?\//);
-if (pos1 > -1) {
-len = txt.match(/\/.+?\//)[0].length; 
-patt = /\W/g;
-cc = txt.match(/\/.+?\//)[0];
-pos2 = cc.length;
-mArr = ["img", "igm", "mig", "mgi", "gim", "gmi", "im", "ig", "mi", "mg", "gi", "gm", "i", "m", "g"];
-for (i = 0; i < mArr.length; i++) {
-re = new RegExp(`\\b^${mArr[i]}\\b`, 'gi');
-if (txt.substr(pos1+pos2).search(re) > -1) {
-modOK = true;
-pos2 = pos2 + mArr[i].length;
+let pos1 = -1, pos2 = 0;
+let match = txt.match(/\/(?:\\.|[^\n\/\\])*\/[gimsuy]*/);
+if (match) {
+pos1 = match.index;
+let regexBody = match[0];
+let lastSlashIndex = regexBody.lastIndexOf("/");
+let flags = regexBody.slice(lastSlashIndex + 1);
+let flagSet = new Set(flags);
+if (flagSet.size !== flags.length) {
+pos2 = pos1 + lastSlashIndex + 1;
 }
+else {
+pos2 = pos1 + regexBody.length;
 }
-if ((txt.substr(pos1 + len,1)!= "/" && txt.substr(pos1 + len,1).match(patt) && txt.substr(pos1 - 1,1).match(patt)&& txt.substr(pos1 - 1,1) !="/") || modOK == true) {
-
-}else {
+if (pos1 > 0 && /\w/.test(txt[pos1 - 1])) {
 pos1 = -1;
 pos2 = 0;
 }
 }
-return [pos1, pos1 + pos2, func];
+return [pos1, pos2, func];
 }
 function getDotPos(txt, func) {
 var x, i, j, s, e, arr = [".", "<", ">", " ", ";", "(", "+", ")", "[", "]", ",", "&", ":", "?", "{", "}", "/" ,"-", "*", "|", "%", "=", "\n"];
