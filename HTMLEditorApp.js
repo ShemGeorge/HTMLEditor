@@ -185,10 +185,11 @@ return this.slice(0, index) + replacement + this.slice(index + search.length);
 }
 
 String.prototype.textify = function() {
-var notReal = document.createElement("span");
-notReal.textContent = this;
-return notReal.innerHTML;
-notReal = null;
+var textified = this;
+textified = textified.replace(/&/g, "&amp;");
+textified = textified.replace(/</g, "&lt;");
+textified = textified.replace(/>/g, "&gt;");
+return textified;
 }
 
 function saveCodeSnapshot() {
