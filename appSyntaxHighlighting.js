@@ -42,7 +42,7 @@ if (element.textContent == "") {
 element.innerHTML = null;
 }
 else {
-element.innerHTML = htmlMode(div.innerHTML);
+element.innerHTML = htmlMode(div.innerHTML).replace(/\u2063/g, "");
 }
 }
 if (mode == "css") {
@@ -61,7 +61,6 @@ else {
 element.innerHTML = jsMode(div.innerHTML);
 }
 }
-element.innerHTML = element.innerHTML.replace(/\u2063/g, "");
 function disableHTMLCommentsInScriptAndStyle(txt) {
 let out = "";
 let pos = 0;
