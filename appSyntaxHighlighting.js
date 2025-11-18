@@ -274,7 +274,7 @@ result = result.substring(0, result.length - 1) + "<span class='css-delimiter-" 
 return "<span class='css-propertyValue-" + theme.value + "'>" + result + "</span>";
 }
 function jsMode(txt) {
-var rest = txt, done = "", commentRanges = [], idx = 0, escNormal = [], escNewline = [], i, cc, tt = "", sfnuttpos, dfnuttpos, tfnuttpos, compos, comlinepos, regexpos, keywordpos, numpos, mypos, dotpos, y;
+var rest = txt, done = "", multilineCommentRanges = [], singlelineCommentRanges = [], idx = 0, escNormal = [], escNewline = [], i, cc, tt = "", sfnuttpos, dfnuttpos, tfnuttpos, compos, comlinepos, regexpos, keywordpos, numpos, mypos, dotpos, y;
 while (idx < rest.length) {
 let start = rest.indexOf("/*", idx);
 if (start === -1) {
@@ -284,20 +284,42 @@ let end = rest.indexOf("*/", start + 2);
 if (end === -1) {
 end = rest.length;
 }
-else end += 2;
-commentRanges.push({ start, end });
+else {
+end += 2;
+}
+multilineCommentRanges.push({ start, end });
+idx = end;
+}
+idx = 0;
+while (idx < rest.length) {
+let start = rest.indexOf("//", idx);
+if (start === -1) {
+break;
+}
+let end = rest.indexOf("\n", start + 2);
+if (end === -1) {
+end = rest.length;
+}
+singlelineCommentRanges.push({ start, end });
 idx = end;
 }
 for (let i = 0; i < rest.length; i++) {
 let cc = rest[i];
 let inMultilineComment = false;
-for (let c = 0; c < commentRanges.length; c++) {
-if (i >= commentRanges[c].start && i < commentRanges[c].end) {
+let inSinglelineComment = false;
+for (let c = 0; c < multilineCommentRanges.length; c++) {
+if (i >= multilineCommentRanges[c].start && i < multilineCommentRanges[c].end) {
 inMultilineComment = true;
 break;
 }
 }
-if (cc === "\\" && !inMultilineComment) {
+for (let c = 0; c < singlelineCommentRanges.length; c++) {
+if (i >= singlelineCommentRanges[c].start && i < singlelineCommentRanges[c].end) {
+inSinglelineComment = true;
+break;
+}
+}
+if (cc === "\\" && !inMultilineComment && !inSinglelineComment) {
 if (i + 1 < rest.length && rest[i + 1] === "\n") {
 escNewline.push("\\\n");
 cc = "\uF004";
