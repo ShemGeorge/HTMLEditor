@@ -9,7 +9,7 @@ width: 800,
 height: 600,
 icon: "HTMLEditorApp.ico",
 webPreferences: {
-preload: path.join(__dirname, "preload.js");
+preload: path.join(__dirname, "preload.js"),
 nodeIntegration: true,
 contextIsolation: true,
 sandbox: true,
@@ -47,5 +47,4 @@ app.on("activate", () => {
 if (mainWindow === null) {
 createWindow();
 }
-
 });
