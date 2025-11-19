@@ -9,9 +9,11 @@ width: 800,
 height: 600,
 icon: "HTMLEditorApp.ico",
 webPreferences: {
-contextIsolation: false,
+preload: path.join(__dirname, "preload.js");
 nodeIntegration: true,
-nativeWindowOpen: true,
+contextIsolation: true,
+sandbox: true,
+nativeWindowOpen: true
 }
 });
 mainWindow.loadFile("HTMLEditorApp.html");
@@ -45,4 +47,5 @@ app.on("activate", () => {
 if (mainWindow === null) {
 createWindow();
 }
+
 });
