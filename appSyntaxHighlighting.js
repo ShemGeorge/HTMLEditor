@@ -36,7 +36,7 @@ function syntaxHighlight(element, mode) {
 var div = document.createElement("div");
 var theme = document.getElementById("theme");
 div.textContent = element.textContent;
-div.innerHTML = disableHTMLCommentsInScriptAndStyle(div.innerHTML)
+div.innerHTML = disableHTMLCommentsInScriptAndStyle(div.innerHTML);
 if (mode == "html") {
 if (element.textContent == "") {
 element.innerHTML = null;
