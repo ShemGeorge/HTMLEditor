@@ -1,4 +1,5 @@
 const { app, BrowserWindow, dialog } = require("electron");
+const path = require("path");
 let mainWindow;
 
 app.setName("HTMLEditor");
