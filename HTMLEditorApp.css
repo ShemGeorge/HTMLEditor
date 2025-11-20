@@ -71,11 +71,11 @@ border: 1px solid black;
 }
 
 .error-text {
-color: #f00;
+color: #ff0000;
 }
 
 .fix-text {
-color: #0f0;
+color: #00b300;
 }
 
 #code {
