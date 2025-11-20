@@ -444,7 +444,7 @@ const errorText = errorMatch[1].trim();
 const fixText = fixMatch[1].trim();
 const codeText = codeMatch ? codeMatch[1].trim() : "";
 debuggerPanel.innerHTML = `<div class="error-text"><u>ERRORS</u>:<br> ${errorText.textify()}</div>
-<div class="fix-text"><u>SUGGESTED FIXES</u>:<br> ${fixText.textify()}</div><br><u style="color: #0f0;">FULL FIXED CODE</u>:<span style="float: right; color: #4AA8FF; cursor: pointer; text-decoration: underline;" onclick="copyFixedCode()">(Copy Fixed Code)</span>`;
+<div class="fix-text"><u>SUGGESTED FIXES</u>:<br> ${fixText.textify()}</div><br><u class="fix-text">FULL FIXED CODE</u>:<span style="float: right; color: #4AA8FF; cursor: pointer; text-decoration: underline;" onclick="copyFixedCode()">(Copy Fixed Code)</span>`;
 fixedCode.innerHTML = codeText.textify();
 syntaxHighlight(fixedCode, "html");
 } catch (err) {
