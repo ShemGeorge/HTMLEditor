@@ -63,65 +63,65 @@ color: #ff79c6;
 }
 
 .comment-light {
-color: #5b00ff;
+color: #6E7B8B;
 }
 
 .html-doctype-light {
-color: #ff6f00;
+color: #005A66;
 }
 
 .html-bracket-light, .html-close-light {
-color: #ff0090;
-}
-
-.html-tag-light {
 color: #0078ff;
 }
 
-.html-attribute-light {
-color: #7a0044;
-}
-
-.html-attributeEquals-light {
-color: #000000;
-}
-
-.html-attributeValue-light {
-color: #008f5a;
-}
-
-.css-selector-light {
-color: #a000ff;
-}
-
-.css-delimiter-light {
-color: #ff0080;
-}
-
-.css-property-light {
-color: #009f00;
-}
-
-.css-propertyValue-light {
+.html-tag-light {
 color: #b38f00;
 }
 
-.javascript-string-light {
+.html-attribute-light {
+color: #a000ff;
+}
+
+.html-attributeEquals-light {
+color: black;
+}
+
+.html-attributeValue-light {
+color: #00D68F;
+}
+
+.css-selector-light {
 color: #3a8f00;
 }
 
-.javascript-keyword-light {
-color: #ff0011;
-}
-
-.javascript-number-light {
-color: #cc00ff;
-}
-
-.javascript-property-light {
+.css-delimiter-light {
 color: #004f9f;
 }
 
-.javascript-regularExpression-light {
+.css-property-light {
+color: #cc00ff;
+}
+
+.css-propertyValue-light {
 color: #ff0090;
+}
+
+.javascript-string-light {
+color: #009f00;
+}
+
+.javascript-keyword-light {
+color: #FF0000;
+}
+
+.javascript-number-light {
+color: #5b00ff;
+}
+
+.javascript-property-light {
+color: #ff6f00;
+}
+
+.javascript-regularExpression-light {
+color: #0078ff;
 }
