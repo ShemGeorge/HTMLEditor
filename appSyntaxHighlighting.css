@@ -1,67 +1,3 @@
-.comment-light {
-color: #6e6e6e;
-}
-
-.html-doctype-light {
-color: #0033cc;
-}
-
-.html-bracket-light, .html-close-light {
-color: #b72bad;
-}
-
-.html-tag-light {
-color: #008c9e;
-}
-
-.html-attribute-light {
-color: #ff7f2a;
-}
-
-.html-attributeEquals-light {
-color: black;
-}
-
-.html-attributeValue-light {
-color: #005fcf;
-}
-
-.css-selector-light {
-color: #8a2be2;
-}
-
-.css-delimiter-light {
-color: #e57373;
-}
-
-.css-property-light {
-color: #2e8b57;
-}
-
-.css-propertyValue-light {
-color: #c59e00;
-}
-
-.javascript-string-light {
-color: #228b22;
-}
-
-.javascript-keyword-light {
-color: #d50000;
-}
-
-.javascript-number-light {
-color: #673ab7;
-}
-
-.javascript-property-light {
-color: #0081a7;
-}
-
-.javascript-regularExpression-light {
-color: #b72bad;
-}
-
 .comment-dark {
 color: #7f8c8d;
 }
@@ -124,4 +60,68 @@ color: #00d4ff;
 
 .javascript-regularExpression-dark {
 color: #ff79c6;
+}
+
+.comment-light {
+color: #5b00ff;
+}
+
+.html-doctype-light {
+color: #ff6f00;
+}
+
+.html-bracket-light, .html-close-light {
+color: #ff0090;
+}
+
+.html-tag-light {
+color: #0078ff;
+}
+
+.html-attribute-light {
+color: #7a0044;
+}
+
+.html-attributeEquals-light {
+color: #000000;
+}
+
+.html-attributeValue-light {
+color: #008f5a;
+}
+
+.css-selector-light {
+color: #a000ff;
+}
+
+.css-delimiter-light {
+color: #ff0080;
+}
+
+.css-property-light {
+color: #009f00;
+}
+
+.css-propertyValue-light {
+color: #b38f00;
+}
+
+.javascript-string-light {
+color: #3a8f00;
+}
+
+.javascript-keyword-light {
+color: #ff0011;
+}
+
+.javascript-number-light {
+color: #cc00ff;
+}
+
+.javascript-property-light {
+color: #004f9f;
+}
+
+.javascript-regularExpression-light {
+color: #ff0090;
 }
