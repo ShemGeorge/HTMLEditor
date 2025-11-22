@@ -736,8 +736,8 @@ alert(message);
 var creatingASyntaxHighlighterCode = `<!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="appSyntaxHighlighting.css">
-<script src="appSyntaxHighlighting.js"></script>
+<link rel="stylesheet" href="https://shemgeorge.github.io/HTMLEditor/HTMLEditorApp.css">
+<script src="https://shemgeorge.github.io/HTMLEditor/HTMLEditorApp.css"></script>
 <style>
 .code {
 white-space: pre;
