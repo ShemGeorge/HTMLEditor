@@ -36,13 +36,12 @@ function syntaxHighlight(element, mode) {
 var div = document.createElement("div");
 var theme = document.getElementById("theme");
 div.textContent = element.textContent;
-div.innerHTML = disableHTMLCommentsInScriptAndStyle(div.innerHTML);
 if (mode == "html") {
 if (element.textContent == "") {
 element.innerHTML = null;
 }
 else {
-element.innerHTML = htmlMode(div.innerHTML).replace(/\u2063/g, "");
+element.innerHTML = htmlMode(div.innerHTML);
 }
 }
 if (mode == "css") {
@@ -119,6 +118,7 @@ this.arr = a;
 }
 function htmlMode(txt) {
 var rest = txt, done = "", php, comment, angular, startpos, endpos, note, i;
+rest = disableHTMLCommentsInScriptAndStyle(rest);
 comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "\uF001");
 rest = comment.rest;
 while (rest.indexOf("&lt;") > -1) {
@@ -159,6 +159,7 @@ rest = done + rest;
 for (i = 0; i < comment.arr.length; i++) {
 rest = rest.replace("\uF001", comment.arr[i]);
 }
+rest = rest.replace(/\u2063/g, "");
 return rest;
 }
 function tagMode(txt) {
