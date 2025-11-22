@@ -737,7 +737,7 @@ var creatingASyntaxHighlighterCode = `<!DOCTYPE html>
 <html>
 <head>
 <link rel="stylesheet" href="https://shemgeorge.github.io/HTMLEditor/HTMLEditorApp.css">
-<script src="https://shemgeorge.github.io/HTMLEditor/HTMLEditorApp.css"></script>
+<script src="https://shemgeorge.github.io/HTMLEditor/HTMLEditorApp.js"></script>
 <style>
 .code {
 white-space: pre;
