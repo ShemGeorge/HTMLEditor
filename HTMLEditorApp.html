@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HTMLEditor</title>
-<link rel="icon" href="HTMLEditorApp.ico">
-<link rel="stylesheet" href="HTMLEditorApp.css">
-<link rel="stylesheet" href="appSyntaxHighlighting.css">
-<script src="HTMLEditorApp.js"></script>
-<script src="appSyntaxHighlighting.js"></script>
+<link rel="icon" href="HTMLEditor.ico">
+<link rel="stylesheet" href="HTMLEditor.css">
+<link rel="stylesheet" href="syntaxHighlighting.css">
+<script src="HTMLEditor.js"></script>
+<script src="syntaxHighlighting.js"></script>
 </head>
 <body>
 <style id="codeSelection">
@@ -16,32 +16,15 @@
 background: #264f78;
 }
 </style>
+<div id="layout">
+<aside id="sidebar">
 <h1>HTMLEditor</h1>
-Theme: <select id="theme" onchange="syntaxHighlight(document.getElementById('code'), 'html'); syntaxHighlight(document.getElementById('HEspecialtag1'), 'html'); syntaxHighlight(document.getElementById('HEspecialtag2'), 'html'); storeTheme();">
+<label>Theme:</label>
+<select id="theme" onchange="syntaxHighlight(document.getElementById('code'), 'html'); storeTheme();">
 <option value="dark">Dark Theme</option>
 <option value="light">Light Theme</option>
-</select>
-<br>
-<ul>
-<li>HTMLEditor is for typing html code only. You could use the <span id="HEspecialtag1" class="HEspecialtag">&lt;style&gt;</span> and <span id="HEspecialtag2"  class="HEspecialtag" >&lt;script&gt;</span> tags to code CSS and Javascript.
-<li>HTMLEditor files must have a ".code" extension. If you don't type the extension in the code name, the extension will come by itself.
-<li>While uploading codes, please try to upload only html or txt files.
-<li>[x] is for deleting the code.
-<li style="color: red;">All the codes you save are saved in a localStorage item called "HEcodes". Please don't use functions like localStorage.setItem("HEcodes"), localStorage.removeItem("HEcodes"), or localStorage.clear().
-<li style="color: red;">The AI Debugger only allows 50 requests per day. Further requests will be rejected once the limit is reached.
-</ul>
-<p id="codesLength"></p>
-Code Name: <input type="text" autocomplete="off" id="codeName" placeholder="Code Name" spellcheck="false">
-<div>
-<button onclick="runCode()">Run Code</button>
-<button onclick="saveCode()">Save Code</button>
-<button onclick="blankCode()">Blank Code</button><br>
-</div>
-<div>
-<button onclick="downloadCode(document.getElementById('codeName').value.replaceLastPortion('.code', '') + '.html', document.getElementById('code').textContent, 'html/plain')">Download Code</button>
-<button onclick="uploadCode()">Upload Code</button>
-</div>
-Tutorials: <select name="tutorials">
+</select>		
+Tutorials: <select name="tutorials" id="tutorials">
 <option id="forLoop">For Loop</option>
 <option id="randomNumberShow">Random Number Show</option>
 <option id="jsCanvas">JS Canvas</option>
@@ -50,7 +33,40 @@ Tutorials: <select name="tutorials">
 <option id="creatingASyntaxHighlighter">Bonus: Creating A Syntax Highlighter</option>
 </select>
 <button onclick="openTutorial()">Open Tutorial</button>
-<div><b>AI HTML Debugger/Enhancer</b>
+<p id="codesLength" style="margin:10px 0;">You have saved 0 code(s).</p>
+<input type="search" id="search" autocomplete="off" placeholder="Search for codes here..." spellcheck="false">
+<button onclick="searchCodes()">Search</button>
+<ul id="allCodes"></ul>
+</aside>
+<main id="mainArea">
+<div id="leftPane">
+<section id="editorPane">
+<div id="topControls">
+Code Name: <input type="text" autocomplete="off" id="codeName" placeholder="Code Name" spellcheck="false">
+<div id="buttonRow">
+<button onclick="runCode()">Run Code</button>
+<button onclick="saveCode()">Save Code</button>
+<button onclick="blankCode()">Blank Code</button>
+<button onclick="downloadCode(document.getElementById('codeName').value.replaceLastPortion('.code', '') + '.html', document.getElementById('code').textContent, 'html/plain')">Download Code</button>
+<button onclick="uploadCode()">Upload Code</button>
+</div>
+</div>
+<div id="codeWrapper" class="code-wrapper">
+<div class="line-numbers"><ol id="lineList"></ol></div>
+<div id="code" oninput="syntaxHighlightContentEditableElement(this, 'html'); updateText(this); updateLineNumbers(this, document.getElementById('lineList'));" 
+contentEditable="plaintext-only" spellcheck="false" placeholder="Type your code here..."></div>
+</div>
+</section>
+<section id="previewPane">
+<div id="frameContainer" style="position: relative;">
+<iframe id="result" sandbox="allow-scripts allow-modals" tabindex="0"></iframe>
+<button id="fullScreenButton" onclick="frameFullScreen()">⛶</button>
+</div>
+</section>
+</div>
+<section id="debuggerSection">
+<div style="margin-bottom:8px;">
+<b>AI HTML Debugger/Enhancer</b>
 <button onclick="AIdebugger()">Debug Code</button>
 <button onclick="clearDebuggerPanel()">Clear Debugging Panel</button>
 </div>
@@ -58,21 +74,9 @@ Tutorials: <select name="tutorials">
 <div id="debuggerPanel"></div>
 <div id="fixedCode"></div>
 </div>
-<div id="container">
-<div class="code-wrapper">
-<div class="line-numbers">
-<ol id="lineList"></ol>
+</section>
+</main>
 </div>
-<div id="code" oninput="syntaxHighlightContentEditableElement(this, 'html'); updateText(this); updateLineNumbers(this, document.getElementById('lineList'));" contentEditable="plaintext-only" spellcheck="false" placeholder="Code"></div>
-</div>
-<div id="frameContainer" style="position: relative; display: inline-block;">
-<iframe id="result" sandbox="allow-scripts allow-modals" tabindex="0"></iframe>
-<button id="fullScreenButton" onclick="frameFullScreen()">⛶</button>
-</div>
-</div>
-<input type="search" id="search" autocomplete="off" placeholder="Search for codes here..." spellcheck="false">
-<button onclick="searchCodes()">Search</button>
-<ul id="allCodes"></ul>
 <div id="fileMenu" style="display: none;">
 <div id="open">Open code</div>
 <div id="del">Delete code</div>
