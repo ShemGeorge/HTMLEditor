@@ -25,8 +25,6 @@ theme = "dark";
 themeOBJ.value = theme;
 storeTheme();
 syntaxHighlight(code, "html");
-syntaxHighlight(document.getElementById("HEspecialtag1"), "html");
-syntaxHighlight(document.getElementById("HEspecialtag2"), "html");
 showCodes();
 });
 runCode();
@@ -109,35 +107,54 @@ var theme = document.getElementById("theme");
 var codeSelection = document.getElementById("codeSelection");
 if (theme.value == "light") {
 saveTheme("light");
-codeSelection.innerHTML = "#code::selection, #code *::selection { background: #b3e5fc; }";
-document.getElementById("HEspecialtag1").setAttribute("style", "background-color: white;");
-document.getElementById("HEspecialtag2").setAttribute("style", "background-color: white;");
-document.body.setAttribute("style", "background-color: white; color: black;");
-document.getElementById("result").setAttribute("style", "background-color: white;");
-code.setAttribute("style", "background-color: white; color: black; caret-color: black;");
-document.querySelector(".line-numbers").setAttribute("style", "background-color: white; color: #444;");
-document.querySelector(".code-wrapper").setAttribute("style", "border: 1px solid black; background-color: white;");
-document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #fff8f0");
+theme.setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("tutorials").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("search").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("codeName").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("leftPane").setAttribute("style", "background: #dcdcdc; color: #222;");
+document.getElementById("debuggerSection").setAttribute("style", "background: #f0f0f0; color: #222;");
+codeSelection.innerHTML = "#code::selection, #code *::selection { background: #cce6ff; }";
+document.getElementById("sidebar").setAttribute("style", "background: #eeeeee;");
+document.body.setAttribute("style", "background-color: #ffffff; color: #222;");
+code.setAttribute("style", "background-color: #ffffff; color: #111; caret-color: #000;");
+document.getElementById("result").style.border = "1px solid #444";
+document.querySelector(".line-numbers").setAttribute("style",
+"background-color: #eaeaea; color: #555; padding-left: 8px;"
+);
+document.querySelector(".code-wrapper").setAttribute("style",
+"border: 1px solid black; background-color: #ffffff;"
+);
+document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #f8f8f8; color: #222; border: 1px solid black;");
 syntaxHighlight(document.getElementById("fixedCode"), "html");
 document.querySelectorAll("button").forEach(button => {
-button.style.background = "linear-gradient(135deg, #A5D6A7, #81C784)";
-button.style.color = "black";
+button.style.background = "linear-gradient(135deg, #d9e6f2, #a6c8e0)";
+button.style.color = "#222";
 });
 }
+
 else if (theme.value == "dark") {
 saveTheme("dark");
-codeSelection.innerHTML = "#code::selection, #code *::selection { background: #264f78; }";
-document.getElementById("HEspecialtag1").setAttribute("style", "background-color: rgb(60, 60, 60);");
-document.getElementById("HEspecialtag2").setAttribute("style", "background-color: rgb(60, 60, 60);");
-document.body.setAttribute("style", "background-color: black; color: white;");
-document.getElementById("result").setAttribute("style", "background-color: white;");
-code.setAttribute("style", "background-color: rgb(60, 60, 60); color: white; caret-color: white;");
-document.querySelector(".line-numbers").setAttribute("style", "background-color: #222; color: #DCDCDC;");
-document.querySelector(".code-wrapper").setAttribute("style", "border: 1px solid #ccc; background-color: #222;");
-document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #1a1a1a");
+theme.setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("tutorials").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("search").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("codeName").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("leftPane").setAttribute("style", "background: #242424; color: #eee;");
+document.getElementById("debuggerSection").setAttribute("style", "background: #111111; color: #eee;");
+codeSelection.innerHTML = "#code::selection, #code *::selection { background: #204968; }";
+document.getElementById("sidebar").setAttribute("style", "background: #0d0d0d;");
+document.body.setAttribute("style", "background-color: #000000; color: #f5f5f5;");
+code.setAttribute("style", "background-color: #1e1e1e; color: #e5e5e5; caret-color: white;");
+document.getElementById("result").style.border = "1px solid #ccc";
+document.querySelector(".line-numbers").setAttribute("style",
+"background-color: #151515; color: #d0d0d0; padding-left: 8px;"
+);
+document.querySelector(".code-wrapper").setAttribute("style",
+"border: 1px solid white; background-color: #151515;"
+);
+document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #111; color: #eee; border: 1px solid white;");
 syntaxHighlight(document.getElementById("fixedCode"), "html");
 document.querySelectorAll("button").forEach(button => {
-button.style.background = "linear-gradient(135deg, #2E7D32, #43A047)";
+button.style.background = "linear-gradient(135deg, #6A00F4, #9A1AFF)";
 button.style.color = "white";
 });
 }
@@ -225,7 +242,7 @@ if (snapshot.text !== undefined) {
 code.textContent = snapshot.text;
 syntaxHighlightContentEditableElement(code, "html");
 updateText(code);
-updateLineNumbers(code, document.getElementById("lineList"));
+updateLineNumbers(code, document.getElementById('lineList'));
 }
 if (typeof snapshot.scrollTop === "number") {
 code.scrollTop = snapshot.scrollTop;
@@ -291,7 +308,7 @@ selection: getCurrentSelectionSnapshot(),
 scrollTop: code.scrollTop
 });
 restoreSnapshot(snapshot);
-document.getElementById("container").scrollIntoView({
+document.getElementById("editorPane").scrollIntoView({
 behavior: "smooth",
 block: "start"
 });
@@ -470,7 +487,7 @@ var script = document.createElement("script");
 updateLineNumbers(code, document.getElementById("lineList"));
 result.srcdoc = code.innerText;
 result.focus();
-document.getElementById("container").scrollIntoView({
+document.getElementById("editorPane").scrollIntoView({
 behavior: "smooth",
 block: "start"
 });
@@ -874,7 +891,7 @@ document.title = "Random Number Show (Tutorial) - " + defaultTitle;
 if (jsCanvas.selected == true) {
 code.textContent = jsCanvasCode;
 codeName.value = "JS Canvas (Tutorial)";
-document.title = "JS Canvas (Tutorial)";
+document.title = "JS Canvas (Tutorial) - " + defaultTitle;
 }
 if (propertyAsAFunctionInJs.selected == true) {
 code.textContent = propertyAsAFunctionInJsCode;
@@ -911,7 +928,7 @@ document.title = "Random Number Show (Tutorial) - " + defaultTitle;
 if (jsCanvas.selected == true) {
 code.textContent = jsCanvasCode;
 codeName.value = "JS Canvas (Tutorial)";
-document.title = "JS Canvas (Tutorial) - " + defaultTitle;
+document.title = "JS Canvas (Tutorial)";
 }
 if (propertyAsAFunctionInJs.selected == true) {
 code.textContent = propertyAsAFunctionInJsCode;
@@ -952,5 +969,12 @@ showCodes();
 }
 
 function updateText(element) {
-unsavedChanges = element.textContent.length > 0;
+if (element.textContent.length > 0) {
+window.onbeforeunload = function(e) {
+return "";
+}
+}
+else {
+window.onbeforeunload = null;
+}
 }
