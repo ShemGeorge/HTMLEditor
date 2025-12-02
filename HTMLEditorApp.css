@@ -26,7 +26,7 @@ font-family: monospace;
 font-size: 15px;
 color: #f5f5f5;
 background: #000000;
-overflow-y: auto;
+overflow: auto;
 min-height: 100%;
 }
 
@@ -76,10 +76,10 @@ min-width: 0;
 }
 
 #leftPane {
-flex: 3;
+flex: 1;
 display: flex;
 flex-direction: column;
-min-width: 0 !important;
+min-width: 0;
 background: #242424;
 color: #eee;
 border-right: 1px solid rgba(255,255,255,0.06);
@@ -103,9 +103,9 @@ box-shadow: inset 0 0 8px rgba(255,255,255,0.06);
 margin: 12px;
 overflow: hidden;
 height: calc(630 / 1536 * 100vh);
-width: 57vw;
-max-width: 95%;
-min-width: 300px;
+width: 60vw;
+max-width: 97%;
+min-width: 425px;
 }
 
 .line-numbers {
@@ -210,7 +210,7 @@ background: rgba(255,255,255,0.25);
 }
 
 #debuggerSection {
-width: 28%;
+width: 35%;
 min-width: 200px;
 background: #111111;
 color: #eee;
@@ -228,13 +228,12 @@ padding: 12px;
 background: #111;
 color: #eee;
 border-radius: 12px;
-overflow: auto;
 border: 1px solid white;
 box-shadow: inset 0 0 8px rgba(255,255,255,0.05);
 font-size: 10px;
 white-space: pre;
 height: calc(1200 / 1536 * 100vh);
-width: calc(145 / 695 * 100vw);
+max-width: 100%;
 overflow: auto;
 }
 
