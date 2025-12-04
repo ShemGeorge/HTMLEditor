@@ -59,27 +59,27 @@ lastFindOnlyIndex = 0;
 lastFindIndex = 0;
 });
 document.body.addEventListener("keydown", function(e) {
-if (e.ctrlKey && e.key === "Enter") {
+if (e.altKey && e.shiftKey && e.key === "Enter") {
 e.preventDefault();
 runCode();
 }
-if (e.ctrlKey && e.key.toLowerCase() === "s") {
+if (e.altKey && e.shiftKey && e.key.toLowerCase() === "s") {
 e.preventDefault();
 saveCode();
 }
-if (e.ctrlKey && e.key.toLowerCase() === "b") {
+if (e.altKey && e.shiftKey && e.key.toLowerCase() === "b") {
 e.preventDefault();
 blankCode();
 }
-if (e.ctrlKey && e.key.toLowerCase() === "d") {
+if (e.altKey && e.shiftKey && e.key.toLowerCase() === "d") {
 e.preventDefault();
 downloadCode(document.getElementById("codeName").value.replaceLastPortion(".code", "") + ".html", document.getElementById("code").textContent, "html/plain");
 }
-if (e.ctrlKey && e.key.toLowerCase() === "u") {
+if (e.altKey && e.shiftKey && e.key.toLowerCase() === "u") {
 e.preventDefault();
 uploadCode();
 }
-if (e.ctrlKey && e.key.toLowerCase() === "j") {
+if (e.altKey && e.shiftKey && e.key.toLowerCase() === "j") {
 e.preventDefault();
 closeFindReplacePanels();
 }
