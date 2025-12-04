@@ -273,8 +273,20 @@ font-family: monospace;
 }
 
 input:focus, select:focus {
-border-color: #9A1AFF;
-box-shadow: 0 0 4px #9A1AFF;
+border-color: #9A1AFF !important;
+box-shadow: 0 0 4px #9A1AFF !important;
+}
+
+#findReplaceCloseInfo {
+margin-top: -10px;
+color: #ccc;
+float: right;
+clear: both;
+}
+
+#findBox, #findReplaceBox {
+transform: scale(0.8);
+transform-origin: top right;
 }
 
 .error-text {
