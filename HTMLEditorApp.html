@@ -59,13 +59,13 @@ Code Name: <input type="text" autocomplete="off" id="codeName" placeholder="Code
 <button onclick="replaceOne()">Replace</button>
 <button onclick="replaceAll()">Replace All</button>
 </div>
-<span id="findReplaceCloseInfo" style="display: none; float: right; font-size: 12px;">Press Ctrl + J to close this👆</span>
+<span id="findReplaceCloseInfo" style="display: none; float: right; font-size: 12px;">Press Alt + Shift + J to close this👆</span>
 <div id="buttonRow">
-<button onclick="runCode()" title="Ctrl + Enter">Run Code</button>
-<button onclick="saveCode()" title="Ctrl + S">Save Code</button>
-<button onclick="blankCode()" title="Ctrl + B">Blank Code</button>
-<button onclick="downloadCode(document.getElementById('codeName').value.replaceLastPortion('.code', '') + '.html', document.getElementById('code').textContent, 'html/plain')"  title="Ctrl + D">Download Code</button>
-<button onclick="uploadCode()"  title="Ctrl + U">Upload Code</button>
+<button onclick="runCode()" title="Alt + Shift + Enter">Run Code</button>
+<button onclick="saveCode()" title="Alt + Shift + S">Save Code</button>
+<button onclick="blankCode()" title="Alt + Shift + B">Blank Code</button>
+<button onclick="downloadCode(document.getElementById('codeName').value.replaceLastPortion('.code', '') + '.html', document.getElementById('code').textContent, 'html/plain')"  title="Alt + Shift + D">Download Code</button>
+<button onclick="uploadCode()"  title="Alt + Shift + U">Upload Code</button>
 </div>
 </div>
 <div id="codeWrapper" class="code-wrapper">
