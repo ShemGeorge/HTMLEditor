@@ -19,6 +19,11 @@ background: #264f78;
 <div id="layout">
 <aside id="sidebar">
 <h1>HTMLEditor</h1>
+<ul style="font-size: 12px;">
+<li>To open <b>"Find"</b> panel, click inside the code-box and press Ctrl + F.</li><br>
+<li>To open <b>"Find and Replace"</b> panel, click inside the code-box and press Ctrl + H.</li>
+</ul>
+<br>
 <label>Theme:</label>
 <select id="theme" onchange="syntaxHighlight(document.getElementById('code'), 'html'); storeTheme();">
 <option value="dark">Dark Theme</option>
@@ -43,12 +48,24 @@ Tutorials: <select name="tutorials" id="tutorials">
 <section id="editorPane">
 <div id="topControls">
 Code Name: <input type="text" autocomplete="off" id="codeName" placeholder="Code Name" spellcheck="false">
+<div id="findBox" style="display: none; float: right;">
+<input id="findOnlyInput" placeholder="Find..." autocomplete="off" style="width: 100px;">
+<button onclick="findNextOnly()">Find Next</button>
+</div>
+<div id="findReplaceBox" style="display: none; float: right;">
+<input id="findText" placeholder="Find..." autocomplete="off" style="width: 100px;">
+<input id="replaceText" placeholder="Replace..." autocomplete="off" style="width: 100px;">
+<button onclick="findNext()">Find Next</button>
+<button onclick="replaceOne()">Replace</button>
+<button onclick="replaceAll()">Replace All</button>
+</div>
+<span id="findReplaceCloseInfo" style="display: none; float: right; font-size: 12px;">Press Ctrl + J to close this👆</span>
 <div id="buttonRow">
-<button onclick="runCode()">Run Code</button>
-<button onclick="saveCode()">Save Code</button>
-<button onclick="blankCode()">Blank Code</button>
-<button onclick="downloadCode(document.getElementById('codeName').value.replaceLastPortion('.code', '') + '.html', document.getElementById('code').textContent, 'html/plain')">Download Code</button>
-<button onclick="uploadCode()">Upload Code</button>
+<button onclick="runCode()" title="Ctrl + Enter">Run Code</button>
+<button onclick="saveCode()" title="Ctrl + S">Save Code</button>
+<button onclick="blankCode()" title="Ctrl + B">Blank Code</button>
+<button onclick="downloadCode(document.getElementById('codeName').value.replaceLastPortion('.code', '') + '.html', document.getElementById('code').textContent, 'html/plain')"  title="Ctrl + D">Download Code</button>
+<button onclick="uploadCode()"  title="Ctrl + U">Upload Code</button>
 </div>
 </div>
 <div id="codeWrapper" class="code-wrapper">
