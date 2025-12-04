@@ -1,9 +1,11 @@
 var defaultTitle = document.title;
 var unsavedChanges = false;
+var lastFindOnlyIndex = 0;
+var lastFindIndex = 0;
 var undoStack = [];
 var redoStack = [];
 
-window.addEventListener("beforeunload", (e) => {
+window.addEventListener("beforeunload", function(e) {
 if (unsavedChanges) {
 e.preventDefault();
 e.returnValue = "";
@@ -43,7 +45,47 @@ if ((e.ctrlKey && e.key.toLowerCase() === 'y') || (e.ctrlKey && e.shiftKey && e.
 e.preventDefault();
 redo();
 }
+if (e.ctrlKey && e.key.toLowerCase() === "f") {
+e.preventDefault();
+openFindOnly();
+}
+if (e.ctrlKey && e.key.toLowerCase() === "h") {
+e.preventDefault();
+openFindReplace();
+}
 });
+code.addEventListener("blur", function() {
+lastFindOnlyIndex = 0;
+lastFindIndex = 0;
+});
+document.body.addEventListener("keydown", function(e) {
+if (e.ctrlKey && e.key === "Enter") {
+e.preventDefault();
+runCode();
+}
+if (e.ctrlKey && e.key.toLowerCase() === "s") {
+e.preventDefault();
+saveCode();
+}
+if (e.ctrlKey && e.key.toLowerCase() === "b") {
+e.preventDefault();
+blankCode();
+}
+if (e.ctrlKey && e.key.toLowerCase() === "d") {
+e.preventDefault();
+downloadCode(document.getElementById("codeName").value.replaceLastPortion(".code", "") + ".html", document.getElementById("code").textContent, "html/plain");
+}
+if (e.ctrlKey && e.key.toLowerCase() === "u") {
+e.preventDefault();
+uploadCode();
+}
+if (e.ctrlKey && e.key.toLowerCase() === "j") {
+e.preventDefault();
+closeFindReplacePanels();
+}
+});
+document.getElementById("findOnlyInput").addEventListener("input", function() { lastFindOnlyIndex = 0; });
+document.getElementById("findText").addEventListener("input", function() { lastFindIndex = 0; });
 }
 
 function invalidArray(array) {
@@ -111,6 +153,7 @@ theme.setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid
 document.getElementById("tutorials").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
 document.getElementById("search").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
 document.getElementById("codeName").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("findOnlyInput").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
 document.getElementById("leftPane").setAttribute("style", "background: #dcdcdc; color: #222;");
 document.getElementById("debuggerSection").setAttribute("style", "background: #f0f0f0; color: #222;");
 codeSelection.innerHTML = "#code::selection, #code *::selection { background: #cce6ff; }";
@@ -138,6 +181,7 @@ theme.setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid
 document.getElementById("tutorials").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
 document.getElementById("search").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
 document.getElementById("codeName").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("findOnlyInput").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
 document.getElementById("leftPane").setAttribute("style", "background: #242424; color: #eee;");
 document.getElementById("debuggerSection").setAttribute("style", "background: #111111; color: #eee;");
 codeSelection.innerHTML = "#code::selection, #code *::selection { background: #204968; }";
@@ -209,10 +253,206 @@ textified = textified.replace(/>/g, "&gt;");
 return textified;
 }
 
+function openFindOnly() {
+document.getElementById("findReplaceBox").style.display = "none";
+document.getElementById("findBox").style.display = "block";
+document.getElementById("findReplaceCloseInfo").style.display = "block";
+document.getElementById("findOnlyInput").focus();
+}
+
+function openFindReplace() {
+document.getElementById("findBox").style.display = "none";
+document.getElementById("findReplaceBox").style.display = "block";
+document.getElementById("findReplaceCloseInfo").style.display = "block";
+document.getElementById("findText").focus();
+}
+
+function closeFindReplacePanels() {
+document.getElementById("findBox").style.display = "none";
+document.getElementById("findReplaceBox").style.display = "none";
+document.getElementById("findReplaceCloseInfo").style.display = "none";
+}
+
+function getCaretIndex(element) {
+const sel = window.getSelection();
+if (!sel.rangeCount) return null;
+const range = sel.getRangeAt(0);
+if (!element.contains(range.startContainer)) return null;
+const preRange = document.createRange();
+preRange.selectNodeContents(element);
+preRange.setEnd(range.startContainer, range.startOffset);
+return preRange.toString().length;
+}
+
+function highlightRange(element, start, end) {
+const sel = window.getSelection();
+const range = document.createRange();
+const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+var node, index = 0;
+while ((node = walker.nextNode())) {
+const len = node.textContent.length;
+if (start < index + len) {
+const startOffset = Math.max(0, start - index);
+const endOffset = Math.min(len, end - index);
+range.setStart(node, startOffset);
+range.setEnd(node, endOffset);
+sel.removeAllRanges();
+sel.addRange(range);
+node.parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+break;
+}
+index += len;
+}
+}
+
+function scrollSelectionIntoView(code) {
+const sel = window.getSelection();
+if (!sel.rangeCount) {
+return;
+}
+const range = sel.getRangeAt(0).cloneRange();
+range.collapse(true);
+const rect = range.getBoundingClientRect();
+const containerRect = code.getBoundingClientRect();
+const offsetTop = rect.top - containerRect.top;
+code.scrollTop += offsetTop - code.clientHeight / 2 + rect.height / 2;
+const offsetLeft = rect.left - containerRect.left;
+code.scrollLeft += offsetLeft - code.clientWidth / 2 + rect.width / 2;
+}
+
+function findNextOnly() {
+const code = document.getElementById("code");
+const findVal = document.getElementById("findOnlyInput").value;
+if (!findVal) {
+return;
+}
+const text = code.textContent;
+var startIndex = lastFindOnlyIndex;
+const sel = window.getSelection();
+if (sel.rangeCount > 0 && sel.toString().length > 0) {
+const range = sel.getRangeAt(0);
+const preRange = document.createRange();
+preRange.selectNodeContents(code);
+preRange.setEnd(range.endContainer, range.endOffset);
+startIndex = preRange.toString().length;
+}
+else {
+const caretIndex = getCaretIndex(code);
+if (caretIndex !== null) startIndex = caretIndex;
+}
+var index = text.indexOf(findVal, startIndex);
+if (index === -1) { 
+index = text.indexOf(findVal, 0);
+if (index === -1) {
+alert("No matches found.");
+return;
+}
+}
+highlightRange(code, index, index + findVal.length);
+lastFindOnlyIndex = index + findVal.length;
+scrollSelectionIntoView(code);
+}
+
+function findNext() {
+const code = document.getElementById("code");
+const findVal = document.getElementById("findText").value;
+if (!findVal) {
+return;
+}
+const text = code.textContent;
+var startIndex = lastFindIndex;
+const sel = window.getSelection();
+if (sel.rangeCount > 0 && sel.toString().length > 0) {
+const range = sel.getRangeAt(0);
+const preRange = document.createRange();
+preRange.selectNodeContents(code);
+preRange.setEnd(range.endContainer, range.endOffset);
+startIndex = preRange.toString().length;
+}
+else {
+const caretIndex = getCaretIndex(code);
+if (caretIndex !== null) startIndex = caretIndex;
+}
+var index = text.indexOf(findVal, startIndex);
+if (index === -1) { 
+index = text.indexOf(findVal, 0);
+if (index === -1) {
+alert("No matches found.");
+return;
+}
+}
+highlightRange(code, index, index + findVal.length);
+lastFindIndex = index + findVal.length;
+scrollSelectionIntoView(code);
+}
+
+function replaceOne() {
+const code = document.getElementById("code");
+const findVal = document.getElementById("findText").value;
+const replaceVal = document.getElementById("replaceText").value;
+if (!findVal) {
+return;
+}
+saveCodeSnapshot();
+const text = code.textContent;
+var startIndex = lastFindIndex;
+const caretIndex = getCaretIndex(code);
+if (caretIndex !== null) startIndex = caretIndex;
+var index = text.indexOf(findVal, startIndex);
+if (index === -1) {
+index = text.indexOf(findVal, 0);
+if (index === -1) {
+alert("No matches found.");
+return;
+}
+}
+code.textContent = text.slice(0, index) + replaceVal + text.slice(index + findVal.length);
+syntaxHighlightContentEditableElement(code, "html");
+code.focus();
+const sel = window.getSelection();
+const range = document.createRange();
+var charIndex = 0;
+var endNode = null;
+const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+while (walker.nextNode()) {
+const node = walker.currentNode;
+const nextIndex = charIndex + node.textContent.length;
+if (!endNode && index + replaceVal.length <= nextIndex) {
+endNode = node;
+range.setStart(node, index + replaceVal.length - charIndex);
+range.collapse(true);
+break;
+}
+charIndex = nextIndex;
+}
+if (endNode) {
+sel.removeAllRanges();
+sel.addRange(range);
+scrollSelectionIntoView(code);
+}
+lastFindIndex = index + replaceVal.length;
+}
+
+function replaceAll() {
+const code = document.getElementById("code");
+const findVal = document.getElementById("findText").value;
+const replaceVal = document.getElementById("replaceText").value;
+if (!findVal) {
+return;
+}
+saveCodeSnapshot();
+code.textContent = code.textContent.split(findVal).join(replaceVal);
+syntaxHighlightContentEditableElement(code, "html");
+lastFindOnlyIndex = 0;
+lastFindIndex = 0;
+code.blur();
+alert("All occurances replaced.");
+}
+
 function saveCodeSnapshot() {
 const code = document.getElementById("code");
 const sel = window.getSelection();
-let range = null;
+var range = null;
 if (sel.rangeCount > 0) {
 const r = sel.getRangeAt(0);
 if (code.contains(r.startContainer) && code.contains(r.endContainer)) {
@@ -273,8 +513,8 @@ return path;
 }
 
 function getNodeFromPath(path, root) {
-let node = root;
-for (let i = 0; i < path.length; i++) {
+var node = root;
+for (var i = 0; i < path.length; i++) {
 if (!node.childNodes[path[i]]) return null;
 node = node.childNodes[path[i]];
 }
@@ -440,10 +680,10 @@ debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}: ${res.st
 return;
 }
 const data = await res.json();
-let text = data.choices?.[0]?.message?.content;
+var text = data.choices?.[0]?.message?.content;
 if (!text || text.trim() === "") {
 const requestsRemaining = data.remainingRequests;
-let msg;
+var msg;
 if (requestsRemaining == null) {
 msg = "AI model used for debugging is currently overloaded. Please try again later.";
 }
@@ -609,6 +849,12 @@ syntaxHighlight(code, "html");
 clearDebuggerPanel();
 undoStack = [];
 redoStack = [];
+lastFindOnlyIndex = 0;
+lastFindIndex = 0;
+document.getElementById("findOnlyInput").value = "";
+document.getElementById("findText").value = "";
+document.getElementById("replaceText").value = "";
+closeFindReplacePanels();
 }
 }
 else {
@@ -621,6 +867,12 @@ syntaxHighlight(code, "html");
 clearDebuggerPanel();
 undoStack = [];
 redoStack = [];
+lastFindOnlyIndex = 0;
+lastFindIndex = 0;
+document.getElementById("findOnlyInput").value = "";
+document.getElementById("findText").value = "";
+document.getElementById("replaceText").value = "";
+closeFindReplacePanels();
 }
 }
 
@@ -636,6 +888,12 @@ syntaxHighlight(code, "html");
 clearDebuggerPanel();
 undoStack = [];
 redoStack = [];
+lastFindOnlyIndex = 0;
+lastFindIndex = 0;
+document.getElementById("findOnlyInput").value = "";
+document.getElementById("findText").value = "";
+document.getElementById("replaceText").value = "";
+closeFindReplacePanels();
 }
 
 function openTutorial() {
