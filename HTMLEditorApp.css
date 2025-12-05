@@ -289,6 +289,11 @@ transform: scale(0.8);
 transform-origin: top right;
 }
 
+#findOnlyInput, #findText, #replaceText {
+width: 90px !important;
+padding: 2px 4px !important;
+}
+
 .error-text {
 color: #ff4d4d;
 }
