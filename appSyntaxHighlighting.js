@@ -124,6 +124,10 @@ while (j >= 0 && str[j] === " ") j--;
 return j >= 0 && str[j] === "=";
 }
 function findTagEnd(str, startIndex) {
+if (str.startsWith("&lt;/", startIndex)) {
+let end = str.indexOf("&gt;", startIndex);
+return end === -1 ? str.length - 1 : end;
+}
 var inSingle = false, inDouble = false;
 var i = startIndex + 4;
 while (i < str.length) {
@@ -145,6 +149,9 @@ result += source.substring(pos, tagStart);
 var tagEnd = findTagEnd(source, tagStart);
 var tagText = source.substring(tagStart, tagEnd + 1);
 var processed = "";
+if (tagText.startsWith("&lt;/")) {
+processed = tagText;
+} else {
 var inSingle = false, inDouble = false;
 for (var i = 0; i < tagText.length; i++) {
 if (!inSingle && tagText[i] === '"' && isEligibleQuote(tagText, i)) { inDouble = true; processed += '"'; continue; }
@@ -155,7 +162,7 @@ if ((inSingle || inDouble) && tagText.startsWith("&gt;", i)) { processed += "<GT
 if ((inSingle || inDouble) && tagText.startsWith("&lt;", i)) { processed += "<LT_ESCAPE></LT_ESCAPE>"; i += 3; continue; }
 processed += tagText[i];
 }
-
+}
 result += processed;
 pos = tagEnd + 1;
 if (tagEnd === source.length - 1) break;
@@ -166,7 +173,7 @@ var out = mainReplacement(txt);
 var pos = 0;
 while (pos < out.length) {
 var scriptOpen = out.toLowerCase().indexOf("&lt;script", pos);
-var styleOpen= out.toLowerCase().indexOf("&lt;style", pos);
+var styleOpen = out.toLowerCase().indexOf("&lt;style", pos);
 var nextTag, nextTagName;
 if (scriptOpen !== -1 && (styleOpen === -1 || scriptOpen < styleOpen)) { nextTag = scriptOpen; nextTagName = "script"; }
 else if (styleOpen !== -1) { nextTag = styleOpen; nextTagName = "style"; }
@@ -174,16 +181,15 @@ else break;
 var openEnd = out.indexOf("&gt;", nextTag);
 if (openEnd === -1) { pos = nextTag + 1; continue; }
 openEnd += 4;
-var closeTag = out.toLowerCase().indexOf(`&lt;/${nextTagName}`, openEnd);
-if (closeTag === -1) closeTag = out.length;
-out =
-out.slice(0, openEnd) +
-out.slice(openEnd, closeTag).replace(/<LT_ESCAPE><\/LT_ESCAPE>/g, "&lt;").replace(/<GT_ESCAPE><\/GT_ESCAPE>/g, "&gt;") +
-out.slice(closeTag);
-var closeEnd = out.indexOf("&gt;", closeTag);
-if (closeEnd === -1) { pos = closeTag + 1; continue; }
-closeEnd += 4;
-out = out.slice(0, closeEnd) + mainReplacement(out.slice(closeEnd));
+var closeTagRegex = new RegExp(`&lt;/` + nextTagName + `\\s*&gt;`, "i");
+var match = closeTagRegex.exec(out.slice(openEnd));
+var closeEnd;
+if (match) {
+closeEnd = openEnd + match.index + match[0].length;
+} else {
+closeEnd = out.length;
+}
+out = out.slice(0, openEnd) + out.slice(openEnd, closeEnd).replace(/<LT_ESCAPE><\/LT_ESCAPE>/g, "&lt;").replace(/<GT_ESCAPE><\/GT_ESCAPE>/g, "&gt;") + out.slice(closeEnd);
 pos = closeEnd;
 }
 return out;
@@ -218,18 +224,14 @@ done += rest.substring(0, startpos);
 done += tagMode(rest.substring(startpos, endpos + 4));
 rest = rest.substr(endpos + 4);
 if (note === "css") {
-endpos = rest.toUpperCase().indexOf("&LT;/STYLE&GT;");
-if (endpos === -1) {
-endpos = rest.length;
-}
+var match = rest.match(/&lt;\/style\s*&gt;/i);
+endpos = match ? match.index : rest.length;
 done += cssMode(rest.substring(0, endpos));
 rest = rest.substr(endpos);
 }
 if (note === "javascript") {
-endpos = rest.toUpperCase().indexOf("&LT;/SCRIPT&GT;");
-if (endpos === -1) {
-endpos = rest.length;
-}
+var match = rest.match(/&lt;\/script\s*&gt;/i);
+endpos = match ? match.index : rest.length;
 done += jsMode(rest.substring(0, endpos));
 rest = rest.substr(endpos);
 }
@@ -244,23 +246,37 @@ rest = rest.replace(/<GT_ESCAPE><\/GT_ESCAPE>/g, "&gt;");
 return rest;
 }
 function tagMode(txt) {
-var rest = txt, done = "", startpos, endpos, result, name;
+var result = "";
+if (txt.startsWith("&lt;/")) {
+let endBracketPos = txt.indexOf("&gt;");
+let tagName;
+let hasEndBracket = endBracketPos !== -1;
+if (hasEndBracket) {
+tagName = txt.slice(5, endBracketPos);
+} else {
+tagName = txt.slice(5);
+}
+result = "<span class='html-bracket-" + theme.value + "'>&lt;</span>" + "<span class='html-close-" + theme.value + "'>/</span>" + tagName;
+
+if (hasEndBracket) {
+result += "<span class='html-bracket-" + theme.value + "'>&gt;</span>";
+}
+} else {
+var rest = txt, done = "", startpos, endpos, name;
 while (rest.search(/(\s|\n)/) > -1) {
 startpos = rest.search(/(\s|\n)/);
 endpos = rest.indexOf("&gt;");
-if (endpos == -1) {endpos = rest.length;}
+if (endpos === -1) endpos = rest.length;
 done += rest.substring(0, startpos);
 done += attributeMode(rest.substring(startpos, endpos));
 rest = rest.substr(endpos);
 }
 result = done + rest;
 name = result.substring(4);
-if (name.substr(0, 1) == "/") {
-name = "<span class='html-close-" + theme.value + "'>/</span>" + name.substring(1, name.length);
-}
 result = "<span class='html-bracket-" + theme.value + "'>&lt;</span>" + name;
-if (result.substr(result.length - 4, 4) == "&gt;") {
-result = result.substring(0, result.length - 4) + "<span class='html-bracket-" + theme.value + "'>&gt;</span>";
+if (result.endsWith("&gt;")) {
+result = result.slice(0, -4) + "<span class='html-bracket-" + theme.value + "'>&gt;</span>";
+}
 }
 return "<span class='html-tag-" + theme.value + "'>" + result + "</span>";
 }
