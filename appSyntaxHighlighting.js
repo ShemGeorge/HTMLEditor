@@ -61,27 +61,27 @@ element.innerHTML = jsMode(div.innerHTML);
 }
 }
 function disableHTMLCommentsInScriptAndStyle(txt) {
-let out = "";
-let pos = 0;
+var out = "";
+var pos = 0;
 const openTagRegex = /&lt;(script|style)\b/gi;
-let match;
+var match;
 while ((match = openTagRegex.exec(txt)) !== null) {
-let start = match.index;
+var start = match.index;
 out += txt.substring(pos, start);
-let openTagEnd = txt.indexOf("&gt;", start);
+var openTagEnd = txt.indexOf("&gt;", start);
 if (openTagEnd === -1) openTagEnd = txt.length;
-let blockStart = openTagEnd + 4;
+var blockStart = openTagEnd + 4;
 const tagName = match[1].toLowerCase();
 const closeTagRegex = new RegExp(`&lt;\\s*\\/${tagName}\\s*&gt;`, "i");
 const closingMatch = closeTagRegex.exec(txt.slice(blockStart));
-let blockEnd;
+var blockEnd;
 if (closingMatch) {
 blockEnd = blockStart + closingMatch.index;
 } else {
 blockEnd = txt.length;
 }
-let inner = txt.substring(blockStart, blockEnd);
-inner = inner.replace(/&lt;!--/g, "&lt;\u2063!--");
+var inner = txt.substring(blockStart, blockEnd);
+inner = inner.replace(/&lt;!--/g, "&lt;<HTMLCOMMENT_INSERTION></HTMLCOMMENT_INSERTION>!--");
 out += txt.substring(start, blockStart) + inner;
 if (closingMatch) {
 const closingTagStart = blockEnd;
@@ -117,150 +117,81 @@ this.rest = d + str;
 this.arr = a;
 }
 function replaceGreaterThanInQuotes(txt) {
+function mainReplacement(source) {
 function isEligibleQuote(str, pos) {
-if (pos === 0) {
-return false;
-}
-let j = pos - 1;
-while (j >= 0 && str[j] === ' ') {
-j--;
-}
-if (j < 0 || str[j] !== '=') {
-return false;
-}
-let open = str.lastIndexOf("&lt;", j);
-if (open === -1) {
-open = 0;
-}
-for (let i = open; i < j; i++) {
-if (str[i] === ' ') {
-return true;
-}
-}
-return false;
+var j = pos - 1;
+while (j >= 0 && str[j] === " ") j--;
+return j >= 0 && str[j] === "=";
 }
 function findTagEnd(str, startIndex) {
-let inSingle = false, inDouble = false;
-let i = startIndex + 4;
+var inSingle = false, inDouble = false;
+var i = startIndex + 4;
 while (i < str.length) {
-let ch = str[i];
-if (!inSingle && ch === '"' && isEligibleQuote(str, i)) {
-inDouble = true;
-i++;
-continue;
-}
-if (!inDouble && ch === "'" && isEligibleQuote(str, i)) {
-inSingle = true;
-i++;
-continue;
-}
-if (inDouble && ch === '"') {
-inDouble = false;
-i++;
-continue;
-}
-if (inSingle && ch === "'") {
-inSingle = false;
-i++;
-continue;
-}
-if (!inSingle && !inDouble && str.startsWith("&gt;", i)) {
-return i;
-}
+var ch = str[i];
+if (!inSingle && ch === '"' && isEligibleQuote(str, i)) { inDouble = true; i++; continue; }
+if (!inDouble && ch === "'" && isEligibleQuote(str, i)) { inSingle = true; i++; continue; }
+if (inDouble && ch === '"') { inDouble = false; i++; continue; }
+if (inSingle && ch === "'") { inSingle = false; i++; continue; }
+if (!inSingle && !inDouble && str.startsWith("&gt;", i)) return i;
 i++;
 }
-return -1;
+return str.length - 1;
 }
-function extractFullBlocks(source, tagName, placeholder, storeArray) {
-let out = "", i = 0;
-const openToken = `&lt;${tagName}`, closeToken = `&lt;/${tagName}&gt;`;
-while (i < source.length) {
-let openIndex = source.toLowerCase().indexOf(openToken, i);
-if (openIndex === -1) {
-out += source.substring(i);
-break;
+var result = "", pos = 0;
+while (pos < source.length) {
+var tagStart = source.indexOf("&lt;", pos);
+if (tagStart === -1) { result += source.substring(pos); break; }
+result += source.substring(pos, tagStart);
+var tagEnd = findTagEnd(source, tagStart);
+var tagText = source.substring(tagStart, tagEnd + 1);
+var processed = "";
+var inSingle = false, inDouble = false;
+for (var i = 0; i < tagText.length; i++) {
+if (!inSingle && tagText[i] === '"' && isEligibleQuote(tagText, i)) { inDouble = true; processed += '"'; continue; }
+if (!inDouble && tagText[i] === "'" && isEligibleQuote(tagText, i)) { inSingle = true; processed += "'"; continue; }
+if (inDouble && tagText[i] === '"') { inDouble = false; processed += '"'; continue; }
+if (inSingle && tagText[i] === "'") { inSingle = false; processed += "'"; continue; }
+if ((inSingle || inDouble) && tagText.startsWith("&gt;", i)) { processed += "<GT_ESCAPE></GT_ESCAPE>"; i += 3; continue; }
+if ((inSingle || inDouble) && tagText.startsWith("&lt;", i)) { processed += "<LT_ESCAPE></LT_ESCAPE>"; i += 3; continue; }
+processed += tagText[i];
 }
-out += source.substring(i, openIndex);
-let endOpen = findTagEnd(source, openIndex);
-if (endOpen === -1) {
-out += source.substring(openIndex);
-break;
-}
-let openTag = source.substring(openIndex, endOpen + 4);
-let closeIndex = source.toLowerCase().indexOf(closeToken, endOpen + 4);
-if (closeIndex === -1) {
-out += source.substring(openIndex);
-break;
-}
-let inner = source.substring(endOpen + 4, closeIndex);
-storeArray.push(inner);
-let closeTag = source.substring(closeIndex, closeIndex + closeToken.length);
-out += openTag + placeholder + closeTag;
-i = closeIndex + closeToken.length;
-}
-return out;
-}
-let scripts = [], styles = [];
-txt = extractFullBlocks(txt, "script", "\uF006", scripts);
-txt = extractFullBlocks(txt, "style", "\uF007", styles);
-let result = "", pos = 0;
-while (pos < txt.length) {
-let tagStart = txt.indexOf("&lt;", pos);
-if (tagStart === -1) {
-result += txt.substring(pos);
-break;
-}
-result += txt.substring(pos, tagStart);
-let tagEnd = findTagEnd(txt, tagStart);
-if (tagEnd === -1) {
-result += txt.substring(tagStart).split("&gt;").join("\u0000");
-break;
-}
-let tagText = txt.substring(tagStart, tagEnd + 4);
-let processed = "";
-let inSingle = false, inDouble = false;
-for (let i = 0; i < tagText.length; i++) {
-let ch = tagText[i];
-if (!inSingle && ch === '"' && isEligibleQuote(tagText, i)) {
-inDouble = true;
-processed += ch;
-continue;
-}
-if (!inDouble && ch === "'" && isEligibleQuote(tagText, i)) {
-inSingle = true;
-processed += ch;
-continue;
-}
-if (inDouble && ch === '"') {
-inDouble = false;
-processed += ch;
-continue;
-}
-if (inSingle && ch === "'") {
-inSingle = false;
-processed += ch;
-continue;
-}
-if ((inSingle || inDouble) && tagText.startsWith("&gt;", i) && i < tagText.length - 4) {
-processed += "\u0000"; i += 3; continue;
-}
-processed += ch;
-}
+
 result += processed;
-pos = tagEnd + 4;
-}
-for (var s of scripts) {
-result = result.replace("\uF006", s);
-}
-for (var s of styles) {
-result = result.replace("\uF007", s);
+pos = tagEnd + 1;
+if (tagEnd === source.length - 1) break;
 }
 return result;
+}
+var out = mainReplacement(txt);
+var pos = 0;
+while (pos < out.length) {
+var scriptOpen = out.toLowerCase().indexOf("&lt;script", pos);
+var styleOpen= out.toLowerCase().indexOf("&lt;style", pos);
+var nextTag, nextTagName;
+if (scriptOpen !== -1 && (styleOpen === -1 || scriptOpen < styleOpen)) { nextTag = scriptOpen; nextTagName = "script"; }
+else if (styleOpen !== -1) { nextTag = styleOpen; nextTagName = "style"; }
+else break;
+var openEnd = out.indexOf("&gt;", nextTag);
+if (openEnd === -1) { pos = nextTag + 1; continue; }
+openEnd += 4;
+var closeTag = out.toLowerCase().indexOf(`&lt;/${nextTagName}`, openEnd);
+if (closeTag === -1) closeTag = out.length;
+out =
+out.slice(0, openEnd) +
+out.slice(openEnd, closeTag).replace(/<LT_ESCAPE><\/LT_ESCAPE>/g, "&lt;").replace(/<GT_ESCAPE><\/GT_ESCAPE>/g, "&gt;") +
+out.slice(closeTag);
+var closeEnd = out.indexOf("&gt;", closeTag);
+if (closeEnd === -1) { pos = closeTag + 1; continue; }
+closeEnd += 4;
+out = out.slice(0, closeEnd) + mainReplacement(out.slice(closeEnd));
+pos = closeEnd;
+}
+return out;
 }
 function htmlMode(txt) {
 var rest = txt, done = "", comment, startpos, endpos, note, i;
 rest = disableHTMLCommentsInScriptAndStyle(rest);
-comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "\uF001");
+comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "<HTMLCOMMENT_ESCAPE></HTMLCOMMENT_ESCAPE>");
 rest = comment.rest;
 while (rest.indexOf("&lt;") > -1) {
 if (/^\s*&LT;!DOCTYPE/i.test(rest)) {
@@ -305,10 +236,11 @@ rest = rest.substr(endpos);
 }
 rest = done + rest;
 for (i = 0; i < comment.arr.length; i++) {
-rest = rest.replace("\uF001", comment.arr[i]);
+rest = rest.replace("<HTMLCOMMENT_ESCAPE></HTMLCOMMENT_ESCAPE>", comment.arr[i]);
 }
-rest = rest.replace(/\u2063/g, "");
-rest = rest.replace(/\u0000/g, "&gt;");
+rest = rest.replace(/<HTMLCOMMENT_INSERTION><\/HTMLCOMMENT_INSERTION>/g, "");
+rest = rest.replace(/<LT_ESCAPE><\/LT_ESCAPE>/g, "&lt;");
+rest = rest.replace(/<GT_ESCAPE><\/GT_ESCAPE>/g, "&gt;");
 return rest;
 }
 function tagMode(txt) {
@@ -333,29 +265,29 @@ result = result.substring(0, result.length - 4) + "<span class='html-bracket-" +
 return "<span class='html-tag-" + theme.value + "'>" + result + "</span>";
 }
 function attributeMode(txt) {
-let rest = txt;
-let done = "";
+var rest = txt;
+var done = "";
 while (true) {
-let eqPos = rest.indexOf("=");
+var eqPos = rest.indexOf("=");
 if (eqPos === -1) break;
 done += rest.substring(0, eqPos);
-let valStart = eqPos + 1;
+var valStart = eqPos + 1;
 while (rest[valStart] === " ") {
 valStart++;
 }
-let endpos = -1;
+var endpos = -1;
 if (rest[valStart] === '"') {
 endpos = rest.indexOf('"', valStart + 1);
 } else if (rest[valStart] === "'") {
 endpos = rest.indexOf("'", valStart + 1);
 } else {
-let space = rest.indexOf(" ", valStart);
+var space = rest.indexOf(" ", valStart);
 endpos = space === -1 ? rest.length : space - 1;
 }
 if (endpos === -1) {
 endpos = rest.length - 1;
 }
-let attrSegment = rest.substring(eqPos, endpos + 1);
+var attrSegment = rest.substring(eqPos, endpos + 1);
 done += attributeValueMode(attrSegment);
 rest = rest.substring(endpos + 1);
 }
@@ -367,12 +299,12 @@ return "<span class='html-attributeEquals-" + theme.value + "'>=</span><span cla
 function commentMode(txt) {
 return "<span class='comment-" + theme.value + "'>" + txt + "</span>";
 }
-function makeCssSafe(text, colonPlaceholder = "\uF00C", semicolonPlaceholder = "\uF00D", openingBracePlaceholder = "\uF00E", closingBracePlaceholder = "\uF00F") {
-let inSingle = false, inDouble = false, inBacktick = false;
-let result = "";
-text = text.replace(/&lt;/g,"\uF008").replace(/&gt;/g,"\uF009").replace(/&amp;/g, "\uF00A").replace(/&nbsp;/g,"\uF00B");
-for (let i = 0; i < text.length; i++) {
-let ch = text[i];
+function makeCssSafe(text, colonPlaceholder = "<CSSCOLON_ESCAPE></CSSCOLON_ESCAPE>", semicolonPlaceholder = "<CSSSEMICOLON_ESCAPE></CSSSEMICOLON_ESCAPE>", openingBracePlaceholder = "<CSSOPENINGBRACE_ESCAPE></CSSOPENINGBRACE_ESCAPE>", closingBracePlaceholder = "<CSSCLOSINGBRACE_ESCAPE></CSSCLOSINGBRACE_ESCAPE>") {
+var inSingle = false, inDouble = false, inBacktick = false;
+var result = "";
+text = text.replace(/&lt;/g, "<CSSLT_ESCAPE></CSSLT_ESCAPE>").replace(/&gt;/g,"<CSSGT_ESCAPE></CSSGT_ESCAPE>").replace(/&amp;/g, "<CSSAMP_ESCAPE></CSSAMP_ESCAPE>").replace(/&nbsp;/g,"<CSSNOBREAK_ESCAPE></CSSNOBREAK_ESCAPE>");
+for (var i = 0; i < text.length; i++) {
+var ch = text[i];
 if (ch === '"' && !inSingle && !inBacktick) {
 inDouble = !inDouble;
 }
@@ -402,7 +334,7 @@ return result;
 }
 function cssMode(txt) {
 var rest = makeCssSafe(txt), done = "", s, e, comment, i, midz, c, cc;
-comment = new extract(rest, /\/\*/, "*/", commentMode, "\uF002");
+comment = new extract(rest, /\/\*/, "*/", commentMode, "<CSSCOMMENT_ESCAPE></CSSCOMMENT_ESCAPE>");
 rest = comment.rest;
 while (rest.search("{") > -1) {
 s = rest.search("{");
@@ -439,14 +371,14 @@ rest = done + rest;
 rest = rest.replace(/{/g, "<span class='css-delimiter-" + theme.value + "'>{</span>");
 rest = rest.replace(/}/g, "<span class='css-delimiter-" + theme.value + "'>}</span>");
 for (i = 0; i < comment.arr.length; i++) {
-rest = rest.replace("\uF002", comment.arr[i]);
+rest = rest.replace("<CSSCOMMENT_ESCAPE></CSSCOMMENT_ESCAPE>", comment.arr[i]);
 }
-rest = rest.replace(/\uF00C/g, ":").replace(/\uF00D/g, ";").replace(/\uF00E/g, "{").replace(/\uF00F/g, "}").replace(/\uF008/g, "&lt;").replace(/\uF009/g, "&gt;").replace(/\uF00A/g, "&amp;").replace(/\uF00B/g, "&nbsp;");
+rest = rest.replace(/<CSSCOLON_ESCAPE><\/CSSCOLON_ESCAPE>/g, ":").replace(/<CSSSEMICOLON_ESCAPE><\/CSSSEMICOLON_ESCAPE>/g, ";").replace(/<CSSOPENINGBRACE_ESCAPE><\/CSSOPENINGBRACE_ESCAPE>/g, "{").replace(/<CSSCLOSINGBRACE_ESCAPE><\/CSSCLOSINGBRACE_ESCAPE>/g, "}").replace(/<CSSLT_ESCAPE><\/CSSLT_ESCAPE>/g, "&lt;").replace(/<CSSGT_ESCAPE><\/CSSGT_ESCAPE>/g, "&gt;").replace(/<CSSAMP_ESCAPE><\/CSSAMP_ESCAPE>/g, "&amp;").replace(/<CSSNOBREAK_ESCAPE><\/CSSNOBREAK_ESCAPE>/g, "&nbsp;");
 return "<span class='css-selector-" + theme.value + "'>" + rest + "</span>";
 }
 function cssPropertyMode(txt) {
-let rest = txt, done = "";
-let s, e;
+var rest = txt, done = "";
+var s, e;
 if (rest.indexOf("{") > -1) {
 return cssMode(rest);
 }
@@ -461,9 +393,9 @@ return "<span class='css-property-" + theme.value + "'>" + done + rest + "</span
 }
 function cssPropertyValueMode(txt) {
 if (!txt) return "";
-let value = "<span class='css-delimiter-" + theme.value + "'>:</span>"
+var value = "<span class='css-delimiter-" + theme.value + "'>:</span>"
 + txt.substring(1);
-let last = value.indexOf(";");
+var last = value.indexOf(";");
 if (last !== -1) {
 value = value.substring(0, last) + "<span class='css-delimiter-" + theme.value + "'>;</span>" + value.substring(last + 1);
 }
@@ -501,8 +433,8 @@ for (var c = 0; c < singlelineCommentRanges.length; c++) {
 if (i >= singlelineCommentRanges[c].start && i < singlelineCommentRanges[c].end) { inSinglelineComment = true; break; }
 }
 if (cc === "\\" && !inMultilineComment && !inSinglelineComment) {
-if (i + 1 < rest.length && rest[i + 1] === "\n") { escNewline.push("\\\n"); cc = "\uF004"; i += 1; }
-else if (i + 1 < rest.length) { escNormal.push(rest.substr(i, 2)); cc = "\uF003"; i += 1; }
+if (i + 1 < rest.length && rest[i + 1] === "\n") { escNewline.push("\\\n"); cc = "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>"; i += 1; }
+else if (i + 1 < rest.length) { escNormal.push(rest.substr(i, 2)); cc = "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>"; i += 1; }
 }
 tt += cc;
 }
@@ -519,13 +451,13 @@ c = txt[i];
 if (c === "\\") {
 if (i + 1 < txt.length && txt[i + 1] === "\n") {
 escNewline.push("\\\n");
-out += "\uF004";
+out += "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>";
 i += 2;
 continue;
 }
 else if (i + 1 < txt.length) {
 escNormal.push(txt.substr(i, 2));
-out += "\uF003";
+out += "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>";
 i += 2;
 continue;
 }
@@ -537,10 +469,10 @@ while (i < txt.length && braceCount > 0) {
 var cc = txt[i];
 if (cc === "{") braceCount++;
 else if (cc === "}") braceCount--;
-if (cc === "`") { escBacktick.push("`"); cc = "\uF005"; }
+if (cc === "`") { escBacktick.push("`"); cc = "<JSBACKTICK_ESCAPE></JSBACKTICK_ESCAPE>"; }
 if (cc === "\\" && i + 1 < txt.length) {
-if (txt[i + 1] === "\n") { escNewline.push("\\\n"); cc = "\uF004"; i++; }
-else { escNormal.push(txt.substr(i, 2)); cc = "\uF003"; i++; }
+if (txt[i + 1] === "\n") { escNewline.push("\\\n"); cc = "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>"; i++; }
+else { escNormal.push(txt.substr(i, 2)); cc = "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>"; i++; }
 }
 out += cc;
 i++;
@@ -582,10 +514,9 @@ done += mypos[2](rest.substring(mypos[0], mypos[1]));
 rest = rest.substr(mypos[1]);
 }
 rest = done + rest;
-for (i = 0; i < escNormal.length; i++) rest = rest.replace("\uF003", escNormal[i]);
-for (i = 0; i < escNewline.length; i++) rest = rest.replace("\uF004", escNewline[i]);
-for (i = 0; i < escBacktick.length; i++) rest = rest.replace("\uF005", escBacktick[i]);
-
+for (i = 0; i < escNormal.length; i++) rest = rest.replace("<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>", escNormal[i]);
+for (i = 0; i < escNewline.length; i++) rest = rest.replace("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>", escNewline[i]);
+for (i = 0; i < escBacktick.length; i++) rest = rest.replace("<JSBACKTICK_ESCAPE></JSBACKTICK_ESCAPE>", escBacktick[i]);
 return rest;
 }
 function jsStringMode(txt) {
@@ -604,17 +535,17 @@ function jsPropertyMode(txt) {
 return "<span class='javascript-property-" + theme.value + "'>" + txt + "</span>";
 }
 function getRegexPos(txt, func) {
-let pos1 = -1, pos2 = 0;
-let match = txt.match(/\/(?:\\.|[^\n\/\\])*\/[gimsuy]*/);
+var pos1 = -1, pos2 = 0;
+var match = txt.match(/\/(?:\\.|<[^>]+>|[^\n\/\\<>])*\/[gimsuy]*/);
 if (match) {
 pos1 = match.index;
-let regexBody = match[0];
-if (regexBody.includes("\uF004")) return [-1, -1, func];
-let lastSlashIndex = regexBody.lastIndexOf("/");
-let flags = regexBody.slice(lastSlashIndex + 1);
-let flagSet = new Set(flags);
+var regexBody = match[0];
+if (regexBody.includes("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>")) return [-1, -1, func];
+var lastSlashIndex = regexBody.lastIndexOf("/");
+var flags = regexBody.slice(lastSlashIndex + 1);
+var flagSet = new Set(flags);
 pos2 = (flagSet.size !== flags.length) ? pos1 + lastSlashIndex + 1 : pos1 + regexBody.length;
-let prevChar = txt[pos1 - 1] || "";
+var prevChar = txt[pos1 - 1] || "";
 if (/\w/.test(prevChar)) {
 pos1 = -1;
 pos2 = 0;
@@ -669,17 +600,17 @@ rpos2 = rpos + words[i].length;
 return [rpos, rpos2, func];
 }
 function getPos(txt, start, end, func) {
-let s = txt.search(start);
+var s = txt.search(start);
 if (s === -1) {
 return [-1, -1, func];
 }
 if (start === '"' || start === "'") {
-let i = s + 1;
+var i = s + 1;
 while (i < txt.length) {
-let ch = txt[i];
+var ch = txt[i];
 if (ch === start) {
-let backslashCount = 0;
-let j = i - 1;
+var backslashCount = 0;
+var j = i - 1;
 while (j >= 0 && txt[j] === "\\") {
 backslashCount++;
 j--;
@@ -696,7 +627,7 @@ i++;
 return [s, i + 1, func];
 } 
 else {
-let e = txt.indexOf(end, s + (end.length || 0));
+var e = txt.indexOf(end, s + (end.length || 0));
 if (e === -1) {
 e = txt.length;
 }
