@@ -57,7 +57,7 @@ if (element.textContent == "") {
 element.innerHTML = null;
 }
 else {
-element.innerHTML = replaceLast(jsMode(div.innerHTML + "!"), "!", "");
+element.innerHTML = jsMode(div.innerHTML);
 }
 }
 function disableHTMLCommentsInScriptAndStyle(txt) {
@@ -232,7 +232,7 @@ rest = rest.substr(endpos);
 if (note === "javascript") {
 var match = rest.match(/&lt;\/script\s*&gt;/i);
 endpos = match ? match.index : rest.length;
-done += replaceLast(jsMode(rest.substring(0, endpos) + "!"), "!", "");
+done += jsMode(rest.substring(0, endpos));
 rest = rest.substr(endpos);
 }
 }
@@ -424,6 +424,7 @@ return "<span class='css-propertyValue-" + theme.value + "'>" + value + "</span>
 }
 function jsMode(txt) {
 var rest = txt, done = "", multilineCommentRanges = [], singlelineCommentRanges = [], idx = 0, escNormal = [], escNewline = [], i, cc, tt = "", sfnuttpos, dfnuttpos, tfnuttpos, compos, comlinepos, regexpos, keywordpos, numpos, mypos, dotpos, y;
+rest = rest + "!";
 while (idx < rest.length) {
 var start = rest.indexOf("/*", idx);
 if (start === -1) break;
@@ -493,14 +494,8 @@ rest = rest.substr(mypos[1]);
 rest = done + rest;
 for (i = 0; i < escNormal.length; i++) rest = rest.replace("<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>", escNormal[i]);
 for (i = 0; i < escNewline.length; i++) rest = rest.replace("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>", escNewline[i]);
+rest = rest.substring(0, rest.lastIndexOf("!")) + rest.substring(rest.lastIndexOf("!") + 1);
 return rest;
-}
-function replaceLast(str, search, replacement) {
-var lastIndex = str.lastIndexOf(search);
-if (lastIndex === -1) {
-return str;
-}
-return str.substring(0, lastIndex) + replacement + str.substring(lastIndex + search.length);
 }
 function jsStringMode(txt) {
 return "<span class='javascript-string-" + theme.value + "'>" + txt + "</span>";
@@ -555,7 +550,7 @@ else if (c === "}" && txt[i - 1] !== "\\") depth--;
 i++;
 }
 var jsChunk = txt.slice(start, i - (depth === 0 ? 1 : 0));
-result += replaceLast(jsMode(jsChunk + "!"), "!", "");
+result += jsMode(jsChunk);
 if (depth === 0) result += "}";
 result += "<span class='javascript-string-" + theme.value + "'>";
 start = i;
