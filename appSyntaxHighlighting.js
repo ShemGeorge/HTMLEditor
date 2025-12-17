@@ -57,13 +57,13 @@ if (element.textContent == "") {
 element.innerHTML = null;
 }
 else {
-element.innerHTML = jsMode(div.innerHTML);
+element.innerHTML = replaceLast(jsMode(div.innerHTML + "!"), "!", "");
 }
 }
 function disableHTMLCommentsInScriptAndStyle(txt) {
 var out = "";
 var pos = 0;
-const openTagRegex = /&lt;(script|style)\b/gi;
+var openTagRegex = /&lt;(script|style)\b/gi;
 var match;
 while ((match = openTagRegex.exec(txt)) !== null) {
 var start = match.index;
@@ -71,9 +71,9 @@ out += txt.substring(pos, start);
 var openTagEnd = txt.indexOf("&gt;", start);
 if (openTagEnd === -1) openTagEnd = txt.length;
 var blockStart = openTagEnd + 4;
-const tagName = match[1].toLowerCase();
-const closeTagRegex = new RegExp(`&lt;\\s*\\/${tagName}\\s*&gt;`, "i");
-const closingMatch = closeTagRegex.exec(txt.slice(blockStart));
+var tagName = match[1].toLowerCase();
+var closeTagRegex = new RegExp(`&lt;\\s*\\/${tagName}\\s*&gt;`, "i");
+var closingMatch = closeTagRegex.exec(txt.slice(blockStart));
 var blockEnd;
 if (closingMatch) {
 blockEnd = blockStart + closingMatch.index;
@@ -84,8 +84,8 @@ var inner = txt.substring(blockStart, blockEnd);
 inner = inner.replace(/&lt;!--/g, "&lt;<HTMLCOMMENT_INSERTION></HTMLCOMMENT_INSERTION>!--");
 out += txt.substring(start, blockStart) + inner;
 if (closingMatch) {
-const closingTagStart = blockEnd;
-const closingTagEnd = blockEnd + closingMatch[0].length;
+var closingTagStart = blockEnd;
+var closingTagEnd = blockEnd + closingMatch[0].length;
 out += txt.substring(closingTagStart, closingTagEnd);
 pos = closingTagEnd;
 openTagRegex.lastIndex = closingTagEnd;
@@ -125,7 +125,7 @@ return j >= 0 && str[j] === "=";
 }
 function findTagEnd(str, startIndex) {
 if (str.startsWith("&lt;/", startIndex)) {
-let end = str.indexOf("&gt;", startIndex);
+var end = str.indexOf("&gt;", startIndex);
 return end === -1 ? str.length - 1 : end;
 }
 var inSingle = false, inDouble = false;
@@ -232,7 +232,7 @@ rest = rest.substr(endpos);
 if (note === "javascript") {
 var match = rest.match(/&lt;\/script\s*&gt;/i);
 endpos = match ? match.index : rest.length;
-done += jsMode(rest.substring(0, endpos));
+done += replaceLast(jsMode(rest.substring(0, endpos) + "!"), "!", "");
 rest = rest.substr(endpos);
 }
 }
@@ -248,9 +248,9 @@ return rest;
 function tagMode(txt) {
 var result = "";
 if (txt.startsWith("&lt;/")) {
-let endBracketPos = txt.indexOf("&gt;");
-let tagName;
-let hasEndBracket = endBracketPos !== -1;
+var endBracketPos = txt.indexOf("&gt;");
+var tagName;
+var hasEndBracket = endBracketPos !== -1;
 if (hasEndBracket) {
 tagName = txt.slice(5, endBracketPos);
 } else {
@@ -315,12 +315,21 @@ return "<span class='html-attributeEquals-" + theme.value + "'>=</span><span cla
 function commentMode(txt) {
 return "<span class='comment-" + theme.value + "'>" + txt + "</span>";
 }
-function makeCssSafe(text, colonPlaceholder = "<CSSCOLON_ESCAPE></CSSCOLON_ESCAPE>", semicolonPlaceholder = "<CSSSEMICOLON_ESCAPE></CSSSEMICOLON_ESCAPE>", openingBracePlaceholder = "<CSSOPENINGBRACE_ESCAPE></CSSOPENINGBRACE_ESCAPE>", closingBracePlaceholder = "<CSSCLOSINGBRACE_ESCAPE></CSSCLOSINGBRACE_ESCAPE>") {
+function makeCssSafe(text) {
 var inSingle = false, inDouble = false, inBacktick = false;
+var colonPlaceholder = "<CSSCOLON_ESCAPE></CSSCOLON_ESCAPE>", semicolonPlaceholder = "<CSSSEMICOLON_ESCAPE></CSSSEMICOLON_ESCAPE>", openingBracePlaceholder = "<CSSOPENINGBRACE_ESCAPE></CSSOPENINGBRACE_ESCAPE>", closingBracePlaceholder = "<CSSCLOSINGBRACE_ESCAPE></CSSCLOSINGBRACE_ESCAPE>";
 var result = "";
 text = text.replace(/&lt;/g, "<CSSLT_ESCAPE></CSSLT_ESCAPE>").replace(/&gt;/g,"<CSSGT_ESCAPE></CSSGT_ESCAPE>").replace(/&amp;/g, "<CSSAMP_ESCAPE></CSSAMP_ESCAPE>").replace(/&nbsp;/g,"<CSSNOBREAK_ESCAPE></CSSNOBREAK_ESCAPE>");
 for (var i = 0; i < text.length; i++) {
 var ch = text[i];
+if ((inSingle || inDouble || inBacktick) && ch === "\\") {
+result += ch;
+if (i + 1 < text.length) {
+result += text[i + 1];
+i++;
+}
+continue;
+}
 if (ch === '"' && !inSingle && !inBacktick) {
 inDouble = !inDouble;
 }
@@ -332,17 +341,13 @@ inBacktick = !inBacktick;
 }
 if ((inSingle || inDouble || inBacktick) && ch === ";") {
 result += semicolonPlaceholder;
-}
-else if ((inSingle || inDouble || inBacktick) && ch === "}") {
+} else if ((inSingle || inDouble || inBacktick) && ch === "}") {
 result += closingBracePlaceholder;
-}
-else if ((inSingle || inDouble || inBacktick) && ch === "{") {
+} else if ((inSingle || inDouble || inBacktick) && ch === "{") {
 result += openingBracePlaceholder;
-}
-else if ((inSingle || inDouble || inBacktick) && ch === ":") {
+} else if ((inSingle || inDouble || inBacktick) && ch === ":") {
 result += colonPlaceholder;
-}
-else {
+} else {
 result += ch;
 }
 }
@@ -418,9 +423,7 @@ value = value.substring(0, last) + "<span class='css-delimiter-" + theme.value +
 return "<span class='css-propertyValue-" + theme.value + "'>" + value + "</span>";
 }
 function jsMode(txt) {
-var rest = txt, done = "", multilineCommentRanges = [], singlelineCommentRanges = [], idx = 0,
-escNormal = [], escNewline = [], escBacktick = [], i, cc, tt = "", sfnuttpos, dfnuttpos, tfnuttpos, compos,
-comlinepos, regexpos, keywordpos, numpos, mypos, dotpos, y;
+var rest = txt, done = "", multilineCommentRanges = [], singlelineCommentRanges = [], idx = 0, escNormal = [], escNewline = [], i, cc, tt = "", sfnuttpos, dfnuttpos, tfnuttpos, compos, comlinepos, regexpos, keywordpos, numpos, mypos, dotpos, y;
 while (idx < rest.length) {
 var start = rest.indexOf("/*", idx);
 if (start === -1) break;
@@ -449,70 +452,28 @@ for (var c = 0; c < singlelineCommentRanges.length; c++) {
 if (i >= singlelineCommentRanges[c].start && i < singlelineCommentRanges[c].end) { inSinglelineComment = true; break; }
 }
 if (cc === "\\" && !inMultilineComment && !inSinglelineComment) {
-if (i + 1 < rest.length && rest[i + 1] === "\n") { escNewline.push("\\\n"); cc = "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>"; i += 1; }
-else if (i + 1 < rest.length) { escNormal.push(rest.substr(i, 2)); cc = "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>"; i += 1; }
+var nextChar = rest[i + 1];
+if (nextChar !== '"' && nextChar !== "'") {
+if (i + 1 < rest.length && nextChar === "\n") {
+escNewline.push("\\\n");
+cc = "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>";
+i += 1;
+} else if (i + 1 < rest.length) {
+escNormal.push(rest.substr(i, 2));
+cc = "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>";
+i += 1;
+}
+}
 }
 tt += cc;
 }
 rest = tt;
-function inlineTemplateParsing(txt) {
-var out = "", i = 0;
-while (i < txt.length) {
-var c = txt[i];
-if (c === "`") {
-out += c;
-i++;
-while (i < txt.length) {
-c = txt[i];
-if (c === "\\") {
-if (i + 1 < txt.length && txt[i + 1] === "\n") {
-escNewline.push("\\\n");
-out += "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>";
-i += 2;
-continue;
-}
-else if (i + 1 < txt.length) {
-escNormal.push(txt.substr(i, 2));
-out += "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>";
-i += 2;
-continue;
-}
-}
-if (c === "$" && i + 1 < txt.length && txt[i + 1] === "{") {
-out += "${"; i += 2;
-var braceCount = 1;
-while (i < txt.length && braceCount > 0) {
-var cc = txt[i];
-if (cc === "{") braceCount++;
-else if (cc === "}") braceCount--;
-if (cc === "`") { escBacktick.push("`"); cc = "<JSBACKTICK_ESCAPE></JSBACKTICK_ESCAPE>"; }
-if (cc === "\\" && i + 1 < txt.length) {
-if (txt[i + 1] === "\n") { escNewline.push("\\\n"); cc = "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>"; i++; }
-else { escNormal.push(txt.substr(i, 2)); cc = "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>"; i++; }
-}
-out += cc;
-i++;
-}
-continue;
-}
-out += c;
-i++;
-if (c === "`") break;
-}
-continue;
-}
-out += c;
-i++;
-}
-return out;
-}
-rest = inlineTemplateParsing(rest);
 y = 1;
 while (y === 1) {
 regexpos = getRegexPos(rest, jsRegexMode);
 sfnuttpos = getPos(rest, "'", "'", jsStringMode);
 dfnuttpos = getPos(rest, '"', '"', jsStringMode);
-tfnuttpos = getPos(rest, "`", "`", jsStringMode);
+tfnuttpos = getTemplateLiteralPos(rest, jsTemplateLiteralMode);
 compos = getPos(rest, /\/\*/, "*/", commentMode);
 comlinepos = getPos(rest, /\/\//, "\n", commentMode);
 numpos = getNumPos(rest, jsNumberMode);
@@ -532,8 +493,14 @@ rest = rest.substr(mypos[1]);
 rest = done + rest;
 for (i = 0; i < escNormal.length; i++) rest = rest.replace("<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>", escNormal[i]);
 for (i = 0; i < escNewline.length; i++) rest = rest.replace("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>", escNewline[i]);
-for (i = 0; i < escBacktick.length; i++) rest = rest.replace("<JSBACKTICK_ESCAPE></JSBACKTICK_ESCAPE>", escBacktick[i]);
 return rest;
+}
+function replaceLast(str, search, replacement) {
+var lastIndex = str.lastIndexOf(search);
+if (lastIndex === -1) {
+return str;
+}
+return str.substring(0, lastIndex) + replacement + str.substring(lastIndex + search.length);
 }
 function jsStringMode(txt) {
 return "<span class='javascript-string-" + theme.value + "'>" + txt + "</span>";
@@ -549,6 +516,114 @@ return "<span class='javascript-number-" + theme.value + "'>" + txt + "</span>";
 }
 function jsPropertyMode(txt) {
 return "<span class='javascript-property-" + theme.value + "'>" + txt + "</span>";
+}
+function jsTemplateLiteralMode(txt) {
+var result = "<span class='javascript-string-" + theme.value + "'>`";
+var i = 1;
+var start = i;
+while (i < txt.length) {
+var ch = txt[i];
+var next = txt[i + 1];
+if (ch === "\\") { 
+i += 2; 
+continue; 
+}
+if (ch === "$" && next === "{" && txt[i - 1] !== "\\") {
+result += txt.slice(start, i) + "</span>${";
+i += 2;
+start = i;
+var depth = 1;
+var stringChar = null;
+while (i < txt.length && depth > 0) {
+var c = txt[i];
+if (c === "\\" && stringChar) {
+i += 2;
+continue;
+}
+if (!stringChar && (c === "'" || c === '"' || c === "`")) {
+stringChar = c;
+} else if (stringChar === c) {
+var backslashes = 0;
+var j = i - 1;
+while (j >= 0 && txt[j] === "\\") { backslashes++; j--; }
+if (backslashes % 2 === 0) stringChar = null;
+}
+if (!stringChar) {
+if (c === "{" && txt[i - 1] !== "\\") depth++;
+else if (c === "}" && txt[i - 1] !== "\\") depth--;
+}
+i++;
+}
+var jsChunk = txt.slice(start, i - (depth === 0 ? 1 : 0));
+result += replaceLast(jsMode(jsChunk + "!"), "!", "");
+if (depth === 0) result += "}";
+result += "<span class='javascript-string-" + theme.value + "'>";
+start = i;
+continue;
+}
+i++;
+}
+result += txt.slice(start) + "</span>";
+return result;
+}
+function getTemplateLiteralPos(txt, func) {
+var start = txt.indexOf("`");
+if (start === -1) {
+return [-1, -1, func];
+}
+var i = start;
+var stack = ["TEMPLATE"];
+while (++i < txt.length) {
+var ch = txt[i];
+var next = txt[i + 1];
+var top = stack[stack.length - 1];
+if (ch === "\\" && (top === "SINGLE" || top === "DOUBLE" || top === "TEMPLATE")) {
+i++;
+continue;
+}
+if (top === "EXPR") {
+if (ch === "'" ) {
+stack.push("SINGLE");
+continue;
+}
+if (ch === '"') {
+stack.push("DOUBLE");
+continue;
+}
+if (ch === "`") {
+stack.push("TEMPLATE");
+continue;
+}
+}
+if (top === "SINGLE" && ch === "'") {
+stack.pop();
+continue;
+}
+
+if (top === "DOUBLE" && ch === '"') {
+stack.pop();
+continue;
+}
+if (top === "TEMPLATE") {
+if (ch === "$" && next === "{") {
+stack.push("EXPR");
+i++;
+continue;
+}
+if (ch === "`") {
+stack.pop();
+if (stack.length === 0) {
+return [start, i + 1, func];
+}
+continue;
+}
+}
+if (top === "EXPR" && ch === "}") {
+stack.pop();
+continue;
+}
+}
+return [start, txt.length, func];
 }
 function getRegexPos(txt, func) {
 var pos1 = -1, pos2 = 0;
@@ -650,7 +725,6 @@ e = txt.length;
 return [s, e + (end.length || 0), func];
 }
 }
-
 function getNumPos(txt, func) {
 var arr = ["\n", " ", ";", "(", "+", ")", "[", "]", ",", "&", ":", "{", "}", "/" ,"-", "*", "|", "%", "="], i, j, c, startpos = 0, endpos, word;
 for (i = 0; i < txt.length; i++) {
