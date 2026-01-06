@@ -58,6 +58,10 @@ color: #bd93f9;
 color: #00d4ff;
 }
 
+.javascript-templateBrace-dark {
+color: #8be9fd;
+}
+
 .javascript-regularExpression-dark {
 color: #ff79c6;
 }
@@ -120,6 +124,10 @@ color: #5b00ff;
 
 .javascript-property-light {
 color: #ff6f00;
+}
+
+.javascript-templateBrace-light {
+color: #00D68F;
 }
 
 .javascript-regularExpression-light {
