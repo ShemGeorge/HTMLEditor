@@ -672,7 +672,7 @@ return [-1, -1, func];
 function getRegexPos(txt, func) {
 let pos1 = -1, pos2 = 0;
 for (let i = 0; i < txt.length; i++) {
-if (txt[i] === "/" && !(/\w/.test(txt[i - 1] || "")) && txt[i - 1] !== "<") {
+if (txt[i] === "/" && !(/\w/.test(txt[i - 1] || "")) && txt[i - 1] !== "<" && txt[i - 1] !== undefined) {
 pos1 = i;
 break;
 }
