@@ -457,7 +457,7 @@ if (i >= singlelineCommentRanges[c].start && i < singlelineCommentRanges[c].end)
 }
 if (cc === "\\" && !inMultilineComment && !inSinglelineComment) {
 var nextChar = rest[i + 1];
-if (nextChar !== '"' && nextChar !== "'" && nextChar !== "`") {
+if (nextChar !== '"' && nextChar !== "'" && nextChar !== "`" && nextChar !== "/") {
 if (i + 1 < rest.length && nextChar === "\n") {
 escNewline.push("\\\n");
 cc = "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>";
@@ -670,23 +670,67 @@ i++;
 return [-1, -1, func];
 }
 function getRegexPos(txt, func) {
-var pos1 = -1, pos2 = 0;
-var match = txt.match(/\/(?:\\.|<[^>]+>|[^\n\/\\<>])*\/[gimsuy]*/);
-if (match) {
-pos1 = match.index;
-var regexBody = match[0];
-if (regexBody.includes("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>")) {
-return [-1, -1, func];
+let pos1 = -1, pos2 = 0;
+for (let i = 0; i < txt.length; i++) {
+if (txt[i] === "/" && !(/\w/.test(txt[i - 1] || "")) && txt[i - 1] !== "<") {
+pos1 = i;
+break;
 }
-var lastSlashIndex = regexBody.lastIndexOf("/");
-var flags = regexBody.slice(lastSlashIndex + 1);
-var flagSet = new Set(flags);
-pos2 = (flagSet.size !== flags.length) ? pos1 + lastSlashIndex + 1 : pos1 + regexBody.length;
-var prevChar = txt[pos1 - 1] || "";
-if (/\w/.test(prevChar)) {
-pos1 = -1;
-pos2 = 0;
 }
+if (pos1 === -1) return [-1, -1, func];
+let inBracket = false;
+let closed = false;
+let i = pos1 + 1;
+while (i < txt.length) {
+if (txt[i] === "\n") break;
+if (txt.startsWith("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>", i)) {
+i += "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>".length;
+break;
+}
+if (txt.startsWith("<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>", i)) {
+i += "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>".length;
+continue;
+}
+if (txt[i] === "[" && !inBracket) {
+inBracket = true;
+i++;
+continue;
+}
+if (txt[i] === "]" && inBracket) {
+inBracket = false;
+i++;
+continue;
+}
+if (txt[i] === "/" && txt[i - 1] !== "\\" && !inBracket) {
+closed = true;
+i++;
+break;
+}
+if (txt[i] === "<") {
+let endTag = txt.indexOf(">", i);
+if (endTag === -1) {
+i = txt.length;
+break;
+}
+else {
+i = endTag + 1;
+continue;
+}
+}
+i++;
+}
+pos2 = i;
+if (closed) {
+let seen = new Set();
+while (i < txt.length) {
+let f = txt[i];
+if ("gimsuy".includes(f) && !seen.has(f)) {
+seen.add(f);
+i++;
+}
+else break;
+}
+pos2 = i;
 }
 return [pos1, pos2, func];
 }
@@ -762,7 +806,7 @@ break;
 i++;
 }
 return [s, i + 1, func];
-} 
+}
 else {
 var e = txt.indexOf(end, s + (end.length || 0));
 if (e === -1) {
