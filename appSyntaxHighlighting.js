@@ -121,7 +121,10 @@ function mainReplacement(source) {
 function isEligibleQuote(str, pos) {
 var j = pos - 1;
 while (j >= 0 && str[j] === " ") j--;
-return j >= 0 && str[j] === "=";
+if (j < 0 || str[j] !== "=") return false;
+var substring = str.slice(0, j);
+if (!/\s/.test(substring)) return false;
+return true;
 }
 function findTagEnd(str, startIndex) {
 if (str.startsWith("&lt;/", startIndex)) {
@@ -513,123 +516,158 @@ function jsPropertyMode(txt) {
 return "<span class='javascript-property-" + theme.value + "'>" + txt + "</span>";
 }
 function jsTemplateLiteralMode(txt) {
-var result = "<span class='javascript-string-" + theme.value + "'>`";
-var i = 1, start = i;
-while (i < txt.length) {
-var ch = txt[i], next = txt[i + 1];
-if (ch === "\\" && i + 1 < txt.length) { i += 2; continue; }
-if (ch === "$" && next === "{" && txt[i - 1] !== "\\") {
-result += txt.slice(start, i);
-result += "<span class='javascript-templateBrace-" + theme.value + "'>${</span>";
-i += 2;
-start = i;
-var depth = 1, inSingle = false, inDouble = false, inTemplate = false, inComment = null;
-while (i < txt.length && depth > 0) {
-ch = txt[i];
-next = txt[i + 1];
-if (ch === "\\" && i + 1 < txt.length) { i += 2; continue; }
-if (!inSingle && !inDouble) {
-if (!inComment && ch === "/" && next === "/") { inComment = "single"; i += 2; continue; }
-if (!inComment && ch === "/" && next === "*") { inComment = "multi"; i += 2; continue; }
-if (inComment === "single" && ch === "\n") { inComment = null; i++; continue; }
-if (inComment === "multi" && ch === "*" && next === "/") { inComment = null; i += 2; continue; }
-if (inComment) { i++; continue; }
+let out = "";
+let i = 0;
+function stripSpans(s) { return s.replace(/<\/?span[^>]*>/g, ""); }
+function findCompleteSpan(txt, startPos) {
+if (!txt.startsWith("<span", startPos)) return null;
+let stack = [];
+let pos = startPos;
+while (pos < txt.length) {
+if (txt.startsWith("<span", pos)) { stack.push("span"); pos += 5; continue; }
+if (txt.startsWith("</span>", pos)) { stack.pop(); pos += 7; if (stack.length === 0) return pos; continue; }
+pos++;
 }
-if (!inComment) {
-if (!inDouble && ch === "'") inSingle = !inSingle;
-else if (!inSingle && ch === '"') inDouble = !inDouble;
+return txt.length;
 }
-if (!inSingle && !inDouble && !inComment && ch === "`") inTemplate = !inTemplate;
-if (!inSingle && !inDouble && !inComment && !inTemplate && ch === "/") {
-var regexMatch = txt.slice(i).match(/\/(?:\\.|<[^>]+>|[^\n\/\\<>])*\/[gimsuy]*/);
-if (regexMatch && i === txt.indexOf(regexMatch[0], !regexMatch[0].includes("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>"))) {
-i += regexMatch[0].length;
-continue;
+function restoreSpans(exprPart, savedSpans) {
+let result = "";
+let placeholder = "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
+let idx = 0;
+for (let s = 0; s < savedSpans.length; s++) {
+let pos = exprPart.indexOf(placeholder, idx);
+if (pos === -1) break;
+result += exprPart.slice(idx, pos);
+result += savedSpans[s];
+idx = pos + placeholder.length;
 }
-}
-if (!inSingle && !inDouble && !inComment && !inTemplate) {
-if (ch === "{") depth++;
-else if (ch === "}") depth--;
-}
-i++;
-}
-var jsChunk = txt.slice(start, i);
-if (jsChunk.endsWith("}")) {
-var innerJS = jsChunk.slice(0, -1);
-var closingBrace = jsChunk.slice(-1);
-result += "</span>" + jsMode(innerJS) + "<span class='javascript-string-" + theme.value + "'>" + "<span class='javascript-templateBrace-" + theme.value + "'>" + closingBrace + "</span>";
-} else {
-result += "</span>" + jsMode(jsChunk) + "<span class='javascript-string-" + theme.value + "'>";
-}
-start = i;
-continue;
-}
-if (ch === "`" && txt[i - 1] !== "\\") {
-result += txt.slice(start, i + 1) + "</span>";
-i++;
-start = i;
-break;
-}
-i++;
-}
-if (start < txt.length) result += txt.slice(start);
+result += exprPart.slice(idx);
 return result;
 }
-function getTemplateLiteralPos(txt, func) {
-var start = txt.indexOf("`");
-if (start === -1) return [-1, -1, func];
-var i = start + 1;
-var depthStack = ["TEMPLATE"];
-var inSingle = false, inDouble = false, inComment = null;
 while (i < txt.length) {
-var ch = txt[i], next = txt[i + 1];
-var top = depthStack[depthStack.length - 1];
-if (ch === "\\" && top !== "REGEX") { i += 2; continue; }
-if (top === "TEMPLATE" && ch === "$" && next === "{") {
-depthStack.push("EXPR");
+if (txt[i] === "`") {
+out += "<span class='javascript-string-" + theme.value + "'>`";
+i++;
+while (i < txt.length) {
+if (txt[i] === "`" && txt[i - 1] !== "\\") { out += "`</span>"; i++; break; }
+if (txt[i] === "$" && txt[i + 1] === "{" && txt[i - 1] !== "\\") {
+out += "<span class='javascript-templateBrace-" + theme.value + "'>${</span>";
 i += 2;
+let raw = txt.slice(i);
+let highlighted = jsMode(raw);
+let savedSpans = [];
+let escaped = "";
+let pos = 0;
+while (pos < highlighted.length) {
+if (highlighted.startsWith("<span", pos)) {
+let end = findCompleteSpan(highlighted, pos);
+savedSpans.push(highlighted.slice(pos, end));
+escaped += "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
+pos = end;
+}
+else {
+escaped += highlighted[pos];
+pos++;
+}
+}
+let depth = 1, closePos = -1;
+for (let k = 0; k < escaped.length; k++) {
+if (escaped[k] === "{") depth++;
+if (escaped[k] === "}") depth--;
+if (depth === 0) { closePos = k; break; }
+}
+if (closePos === -1) closePos = escaped.length;
+let exprPart = escaped.slice(0, closePos);
+exprPart = restoreSpans(exprPart, savedSpans);
+out += "<span class='javascript-templateExpression-" + theme.value + "'>" + exprPart + "</span>";
+let exprClean = stripSpans(exprPart);
+if (txt[i + exprClean.length] === "}") {
+out += "<span class='javascript-templateBrace-" + theme.value + "'>}</span>";
+i += exprClean.length + 1;
+}
+else {
+i += exprClean.length;
+}
 continue;
 }
-if (top === "EXPR") {
-if (!inComment) {
-if (!inDouble && ch === "'") inSingle = !inSingle;
-else if (!inSingle && ch === '"') inDouble = !inDouble;
+out += txt[i];
+i++;
 }
-if (!inSingle && !inDouble) {
-if (!inComment && ch === "/" && next === "/") { inComment = "single"; i += 2; continue; }
-if (!inComment && ch === "/" && next === "*") { inComment = "multi"; i += 2; continue; }
-if (inComment === "single" && ch === "\n") { inComment = null; i++; continue; }
-if (inComment === "multi" && ch === "*" && next === "/") { inComment = null; i += 2; continue; }
-if (inComment) { i++; continue; }
-}
-if (!inSingle && !inDouble && !inComment) {
-if (ch === "{") depthStack.push("{");
-else if (ch === "}") {
-depthStack.pop();
-if (depthStack[depthStack.length - 1] === "EXPR" && !depthStack.includes("{")) depthStack.pop();
-}
-}
-if (!inSingle && !inDouble && !inComment && ch === "`") {
-depthStack.push("TEMPLATE"); i++; continue;
-}
-if (!inSingle && !inDouble && !inComment && ch === "/") {
-var regexMatch = txt.slice(i).match(/\/(?:\\.|<[^>]+>|[^\n\/\\<>])*\/[gimsuy]*/);
-if (regexMatch && i === txt.indexOf(regexMatch[0], !regexMatch[0].includes("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>"))) {
-i += regexMatch[0].length;
+if (!out.endsWith("</span>")) out += "</span>";
 continue;
 }
+out += txt[i];
+i++;
+}
+return out;
+}
+function getTemplateLiteralPos(txt, func) {
+const stripSpans = s => s.replace(/<\/?span[^>]*>/g, "");
+const clean = stripSpans(txt);
+let i = 0;
+function findCompleteSpan(txt, startPos) {
+if (!txt.startsWith("<span", startPos)) return null;
+let stack = [];
+let pos = startPos;
+while (pos < txt.length) {
+if (txt.startsWith("<span", pos)) { stack.push("span"); pos += 5; continue; }
+if (txt.startsWith("</span>", pos)) { stack.pop(); pos += 7; if (stack.length === 0) return pos; continue; }
+pos++;
+}
+return txt.length;
+}
+while (i < clean.length) {
+if (clean[i] === "`") {
+let start = i;
+i++;
+while (i < clean.length) {
+if (clean[i] === "`" && clean[i - 1] !== "\\") return [start, i + 1, func];
+if (clean[i] === "$" && clean[i + 1] === "{" && clean[i - 1] !== "\\") {
+i += 2;
+let raw = clean.slice(i);
+let highlighted = jsMode(raw);
+let savedSpans = [];
+let escaped = "";
+let pos = 0;
+while (pos < highlighted.length) {
+if (highlighted.startsWith("<span", pos)) {
+let end = findCompleteSpan(highlighted, pos);
+savedSpans.push(highlighted.slice(pos, end));
+escaped += "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
+pos = end;
+}
+else {
+escaped += highlighted[pos];
+pos++;
+}
+}
+let depth = 1, closePos = -1;
+for (let k = 0; k < escaped.length; k++) {
+if (escaped[k] === "{") depth++;
+if (escaped[k] === "}") depth--;
+if (depth === 0) { closePos = k; break; }
+}
+if (closePos === -1) closePos = escaped.length;
+let exprPart = escaped.slice(0, closePos);
+let idx = 0;
+let placeholder = "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
+for (let s = 0; s < savedSpans.length; s++) {
+let p = exprPart.indexOf(placeholder, idx);
+if (p === -1) break;
+exprPart = exprPart.slice(0, p) + savedSpans[s] + exprPart.slice(p + placeholder.length);
+idx = p + savedSpans[s].length;
+}
+let exprClean = stripSpans(exprPart);
+i += exprClean.length + 1;
+continue;
 }
 i++;
-continue;
 }
-if (top === "TEMPLATE" && ch === "`") {
-depthStack.pop(); i++;
-if (depthStack.length === 0) return [start, i, func];
-continue;
+return [start, clean.length, func];
 }
 i++;
 }
-return [start, txt.length, func];
+return [-1, -1, func];
 }
 function getRegexPos(txt, func) {
 var pos1 = -1, pos2 = 0;
