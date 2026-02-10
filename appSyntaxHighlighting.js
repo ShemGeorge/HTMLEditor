@@ -107,10 +107,7 @@ let tagStart = i;
 let tagEnd = txt.indexOf("&gt;", i + 4);
 if (tagEnd === -1) {
 let tagBody = txt.slice(i);
-tagBody = tagBody.replace(
-/&lt;!--/g,
-"&lt;<HTMLCOMMENT_INSERTION></HTMLCOMMENT_INSERTION>!--"
-);
+tagBody = tagBody.replace(/&lt;!--/g, "&lt;<HTMLCOMMENT_INSERTION></HTMLCOMMENT_INSERTION>!--");
 out += tagBody;
 break;
 }
