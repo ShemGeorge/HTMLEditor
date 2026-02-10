@@ -98,6 +98,33 @@ break;
 out += txt.substring(pos);
 return out;
 }
+function disableHtmlCommentsInsideTags(txt) {
+let out = "";
+let i = 0;
+while (i < txt.length) {
+if (txt.startsWith("&lt;", i) && !txt.startsWith("&lt;!--", i)) {
+let tagStart = i;
+let tagEnd = txt.indexOf("&gt;", i + 4);
+if (tagEnd === -1) {
+let tagBody = txt.slice(i);
+tagBody = tagBody.replace(
+/&lt;!--/g,
+"&lt;<HTMLCOMMENT_INSERTION></HTMLCOMMENT_INSERTION>!--"
+);
+out += tagBody;
+break;
+}
+let tagText = txt.slice(i, tagEnd + 4);
+tagText = tagText.replace(/&lt;!--/g, "&lt;<HTMLCOMMENT_INSERTION></HTMLCOMMENT_INSERTION>!--");
+out += tagText;
+i = tagEnd + 4;
+continue;
+}
+out += txt[i];
+i++;
+}
+return out;
+}
 function extract(str, start, end, func, repl) {
 var s, e, d = "", a = [];
 while (str.search(start) > -1) {
@@ -200,6 +227,7 @@ return out;
 function htmlMode(txt) {
 var rest = txt, done = "", comment, startpos, endpos, note, i;
 rest = disableHTMLCommentsInScriptAndStyle(rest);
+rest = disableHtmlCommentsInsideTags(rest);
 comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "<HTMLCOMMENT_ESCAPE></HTMLCOMMENT_ESCAPE>");
 rest = comment.rest;
 while (rest.indexOf("&lt;") > -1) {
@@ -426,7 +454,7 @@ value = value.substring(0, last) + "<span class='css-delimiter-" + theme.value +
 return "<span class='css-propertyValue-" + theme.value + "'>" + value + "</span>";
 }
 function jsMode(txt) {
-var rest = txt, done = "", multilineCommentRanges = [], singlelineCommentRanges = [], idx = 0, escNormal = [], escNewline = [], i, cc, tt = "", sfnuttpos, dfnuttpos, tfnuttpos, compos, comlinepos, regexpos, keywordpos, numpos, mypos, dotpos, y;
+var rest = txt, done = "", multilineCommentRanges = [], singlelineCommentRanges = [], idx = 0, i, cc, tt = "", sfnuttpos, dfnuttpos, tfnuttpos, compos, comlinepos, regexpos, keywordpos, numpos, mypos, dotpos, y;
 rest = rest + ")";
 while (idx < rest.length) {
 var start = rest.indexOf("/*", idx);
@@ -455,20 +483,6 @@ if (i >= multilineCommentRanges[c].start && i < multilineCommentRanges[c].end) {
 for (var c = 0; c < singlelineCommentRanges.length; c++) {
 if (i >= singlelineCommentRanges[c].start && i < singlelineCommentRanges[c].end) { inSinglelineComment = true; break; }
 }
-if (cc === "\\" && !inMultilineComment && !inSinglelineComment) {
-var nextChar = rest[i + 1];
-if (nextChar !== '"' && nextChar !== "'" && nextChar !== "`" && nextChar !== "/") {
-if (i + 1 < rest.length && nextChar === "\n") {
-escNewline.push("\\\n");
-cc = "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>";
-i += 1;
-} else if (i + 1 < rest.length) {
-escNormal.push(rest.substr(i, 2));
-cc = "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>";
-i += 1;
-}
-}
-}
 tt += cc;
 }
 rest = tt;
@@ -495,8 +509,6 @@ done += mypos[2](rest.substring(mypos[0], mypos[1]));
 rest = rest.substr(mypos[1]);
 }
 rest = done + rest;
-for (i = 0; i < escNormal.length; i++) rest = rest.replace("<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>", escNormal[i]);
-for (i = 0; i < escNewline.length; i++) rest = rest.replace("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>", escNewline[i]);
 rest = rest.substring(0, rest.lastIndexOf(")")) + rest.substring(rest.lastIndexOf(")") + 1);
 return rest;
 }
@@ -683,14 +695,6 @@ let closed = false;
 let i = pos1 + 1;
 while (i < txt.length) {
 if (txt[i] === "\n") break;
-if (txt.startsWith("<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>", i)) {
-i += "<JSNEWLINE_ESCAPE></JSNEWLINE_ESCAPE>".length;
-break;
-}
-if (txt.startsWith("<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>", i)) {
-i += "<JSNORMAL_ESCAPE></JSNORMAL_ESCAPE>".length;
-continue;
-}
 if (txt[i] === "[" && !inBracket) {
 inBracket = true;
 i++;
@@ -701,20 +705,17 @@ inBracket = false;
 i++;
 continue;
 }
-if (txt[i] === "/" && txt[i - 1] !== "\\" && !inBracket) {
+if (txt[i] === "/" && !inBracket) {
+let backslashCount = 0;
+let j = i - 1;
+while (j >= 0 && txt[j] === "\\") {
+backslashCount++;
+j--;
+}
+if (backslashCount % 2 === 0) {
 closed = true;
 i++;
 break;
-}
-if (txt[i] === "<") {
-let endTag = txt.indexOf(">", i);
-if (endTag === -1) {
-i = txt.length;
-break;
-}
-else {
-i = endTag + 1;
-continue;
 }
 }
 i++;
@@ -776,7 +777,7 @@ rpos = pos;
 rpos2 = rpos + words[i].length;
 }
 }
-} 
+}
 }
 return [rpos, rpos2, func];
 }
@@ -801,7 +802,15 @@ break;
 }
 }
 if (ch === "\n") {
+var backslashCount = 0;
+var j = i - 1;
+while (j >= 0 && txt[j] === "\\") {
+backslashCount++;
+j--;
+}
+if (backslashCount % 2 === 0) {
 break;
+}
 }
 i++;
 }
