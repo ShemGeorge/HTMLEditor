@@ -490,7 +490,7 @@ sfnuttpos = getPos(rest, "'", "'", jsStringMode);
 dfnuttpos = getPos(rest, '"', '"', jsStringMode);
 tfnuttpos = getTemplateLiteralPos(rest, jsTemplateLiteralMode);
 compos = getPos(rest, /\/\*/, "*/", commentMode);
-comlinepos = getPos(rest, /\/\//, "\n", commentMode);
+comlinepos = getPos(rest, "//", "\n", commentMode);
 numpos = getNumPos(rest, jsNumberMode);
 keywordpos = getKeywordPos("js", rest, jsKeywordMode);
 dotpos = getDotPos(rest, jsPropertyMode);
@@ -812,6 +812,13 @@ break;
 i++;
 }
 return [s, i + 1, func];
+}
+else if (start === "//") {
+var e = txt.indexOf(end, s);
+if (e === -1) {
+e = txt.length;
+}
+return [s, e, func];
 }
 else {
 var e = txt.indexOf(end, s + (end.length || 0));
