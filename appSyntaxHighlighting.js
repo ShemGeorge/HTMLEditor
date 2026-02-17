@@ -99,19 +99,19 @@ out += txt.substring(pos);
 return out;
 }
 function disableHtmlCommentsInsideTags(txt) {
-let out = "";
-let i = 0;
+var out = "";
+var i = 0;
 while (i < txt.length) {
 if (txt.startsWith("&lt;", i) && !txt.startsWith("&lt;!--", i)) {
-let tagStart = i;
-let tagEnd = txt.indexOf("&gt;", i + 4);
+var tagStart = i;
+var tagEnd = txt.indexOf("&gt;", i + 4);
 if (tagEnd === -1) {
-let tagBody = txt.slice(i);
+var tagBody = txt.slice(i);
 tagBody = tagBody.replace(/&lt;!--/g, "&lt;<HTMLCOMMENT_INSERTION></HTMLCOMMENT_INSERTION>!--");
 out += tagBody;
 break;
 }
-let tagText = txt.slice(i, tagEnd + 4);
+var tagText = txt.slice(i, tagEnd + 4);
 tagText = tagText.replace(/&lt;!--/g, "&lt;<HTMLCOMMENT_INSERTION></HTMLCOMMENT_INSERTION>!--");
 out += tagText;
 i = tagEnd + 4;
@@ -525,13 +525,13 @@ function jsPropertyMode(txt) {
 return "<span class='javascript-property-" + theme.value + "'>" + txt + "</span>";
 }
 function jsTemplateLiteralMode(txt) {
-let out = "";
-let i = 0;
+var out = "";
+var i = 0;
 function stripSpans(s) { return s.replace(/<\/?span[^>]*>/g, ""); }
 function findCompleteSpan(txt, startPos) {
 if (!txt.startsWith("<span", startPos)) return null;
-let stack = [];
-let pos = startPos;
+var stack = [];
+var pos = startPos;
 while (pos < txt.length) {
 if (txt.startsWith("<span", pos)) { stack.push("span"); pos += 5; continue; }
 if (txt.startsWith("</span>", pos)) { stack.pop(); pos += 7; if (stack.length === 0) return pos; continue; }
@@ -540,11 +540,11 @@ pos++;
 return txt.length;
 }
 function restoreSpans(exprPart, savedSpans) {
-let result = "";
-let placeholder = "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
-let idx = 0;
-for (let s = 0; s < savedSpans.length; s++) {
-let pos = exprPart.indexOf(placeholder, idx);
+var result = "";
+var placeholder = "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
+var idx = 0;
+for (var s = 0; s < savedSpans.length; s++) {
+var pos = exprPart.indexOf(placeholder, idx);
 if (pos === -1) break;
 result += exprPart.slice(idx, pos);
 result += savedSpans[s];
@@ -562,14 +562,14 @@ if (txt[i] === "`" && txt[i - 1] !== "\\") { out += "`</span>"; i++; break; }
 if (txt[i] === "$" && txt[i + 1] === "{" && txt[i - 1] !== "\\") {
 out += "<span class='javascript-templateBrace-" + theme.value + "'>${</span>";
 i += 2;
-let raw = txt.slice(i);
-let highlighted = jsMode(raw);
-let savedSpans = [];
-let escaped = "";
-let pos = 0;
+var raw = txt.slice(i);
+var highlighted = jsMode(raw);
+var savedSpans = [];
+var escaped = "";
+var pos = 0;
 while (pos < highlighted.length) {
 if (highlighted.startsWith("<span", pos)) {
-let end = findCompleteSpan(highlighted, pos);
+var end = findCompleteSpan(highlighted, pos);
 savedSpans.push(highlighted.slice(pos, end));
 escaped += "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
 pos = end;
@@ -579,17 +579,17 @@ escaped += highlighted[pos];
 pos++;
 }
 }
-let depth = 1, closePos = -1;
-for (let k = 0; k < escaped.length; k++) {
+var depth = 1, closePos = -1;
+for (var k = 0; k < escaped.length; k++) {
 if (escaped[k] === "{") depth++;
 if (escaped[k] === "}") depth--;
 if (depth === 0) { closePos = k; break; }
 }
 if (closePos === -1) closePos = escaped.length;
-let exprPart = escaped.slice(0, closePos);
+var exprPart = escaped.slice(0, closePos);
 exprPart = restoreSpans(exprPart, savedSpans);
 out += "<span class='javascript-templateExpression-" + theme.value + "'>" + exprPart + "</span>";
-let exprClean = stripSpans(exprPart);
+var exprClean = stripSpans(exprPart);
 if (txt[i + exprClean.length] === "}") {
 out += "<span class='javascript-templateBrace-" + theme.value + "'>}</span>";
 i += exprClean.length + 1;
@@ -613,11 +613,11 @@ return out;
 function getTemplateLiteralPos(txt, func) {
 const stripSpans = s => s.replace(/<\/?span[^>]*>/g, "");
 const clean = stripSpans(txt);
-let i = 0;
+var i = 0;
 function findCompleteSpan(txt, startPos) {
 if (!txt.startsWith("<span", startPos)) return null;
-let stack = [];
-let pos = startPos;
+var stack = [];
+var pos = startPos;
 while (pos < txt.length) {
 if (txt.startsWith("<span", pos)) { stack.push("span"); pos += 5; continue; }
 if (txt.startsWith("</span>", pos)) { stack.pop(); pos += 7; if (stack.length === 0) return pos; continue; }
@@ -627,20 +627,20 @@ return txt.length;
 }
 while (i < clean.length) {
 if (clean[i] === "`") {
-let start = i;
+var start = i;
 i++;
 while (i < clean.length) {
 if (clean[i] === "`" && clean[i - 1] !== "\\") return [start, i + 1, func];
 if (clean[i] === "$" && clean[i + 1] === "{" && clean[i - 1] !== "\\") {
 i += 2;
-let raw = clean.slice(i);
-let highlighted = jsMode(raw);
-let savedSpans = [];
-let escaped = "";
-let pos = 0;
+var raw = clean.slice(i);
+var highlighted = jsMode(raw);
+var savedSpans = [];
+var escaped = "";
+var pos = 0;
 while (pos < highlighted.length) {
 if (highlighted.startsWith("<span", pos)) {
-let end = findCompleteSpan(highlighted, pos);
+var end = findCompleteSpan(highlighted, pos);
 savedSpans.push(highlighted.slice(pos, end));
 escaped += "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
 pos = end;
@@ -650,23 +650,23 @@ escaped += highlighted[pos];
 pos++;
 }
 }
-let depth = 1, closePos = -1;
-for (let k = 0; k < escaped.length; k++) {
+var depth = 1, closePos = -1;
+for (var k = 0; k < escaped.length; k++) {
 if (escaped[k] === "{") depth++;
 if (escaped[k] === "}") depth--;
 if (depth === 0) { closePos = k; break; }
 }
 if (closePos === -1) closePos = escaped.length;
-let exprPart = escaped.slice(0, closePos);
-let idx = 0;
-let placeholder = "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
-for (let s = 0; s < savedSpans.length; s++) {
-let p = exprPart.indexOf(placeholder, idx);
+var exprPart = escaped.slice(0, closePos);
+var idx = 0;
+var placeholder = "<JSTEMPEXPR_ESCAPE></JSTEMPEXPR_ESCAPE>";
+for (var s = 0; s < savedSpans.length; s++) {
+var p = exprPart.indexOf(placeholder, idx);
 if (p === -1) break;
 exprPart = exprPart.slice(0, p) + savedSpans[s] + exprPart.slice(p + placeholder.length);
 idx = p + savedSpans[s].length;
 }
-let exprClean = stripSpans(exprPart);
+var exprClean = stripSpans(exprPart);
 i += exprClean.length + 1;
 continue;
 }
@@ -679,17 +679,17 @@ i++;
 return [-1, -1, func];
 }
 function getRegexPos(txt, func) {
-let pos1 = -1, pos2 = 0;
-for (let i = 0; i < txt.length; i++) {
-if (txt[i] === "/" && !(/\w/.test(txt[i - 1] || "")) && txt[i - 1] !== "<" && txt[i - 1] !== undefined) {
+var pos1 = -1, pos2 = 0;
+for (var i = 0; i < txt.length; i++) {
+if (txt[i] === "/" && !(/\w/.test(txt[i - 1] || "")) && txt[i - 1] !== "<") {
 pos1 = i;
 break;
 }
 }
 if (pos1 === -1) return [-1, -1, func];
-let inBracket = false;
-let closed = false;
-let i = pos1 + 1;
+var inBracket = false;
+var closed = false;
+var i = pos1 + 1;
 while (i < txt.length) {
 if (txt[i] === "\n") break;
 if (txt[i] === "[" && !inBracket) {
@@ -703,8 +703,8 @@ i++;
 continue;
 }
 if (txt[i] === "/" && !inBracket) {
-let backslashCount = 0;
-let j = i - 1;
+var backslashCount = 0;
+var j = i - 1;
 while (j >= 0 && txt[j] === "\\") {
 backslashCount++;
 j--;
@@ -717,11 +717,11 @@ break;
 }
 i++;
 }
+if (!closed) return [-1, -1, func];
 pos2 = i;
-if (closed) {
-let seen = new Set();
+var seen = new Set();
 while (i < txt.length) {
-let f = txt[i];
+var f = txt[i];
 if ("gimsuy".includes(f) && !seen.has(f)) {
 seen.add(f);
 i++;
@@ -729,7 +729,6 @@ i++;
 else break;
 }
 pos2 = i;
-}
 return [pos1, pos2, func];
 }
 function getDotPos(txt, func) {
