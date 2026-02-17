@@ -1,9 +1,17 @@
 var defaultTitle = document.title;
 var unsavedChanges = false;
-var lastFindOnlyIndex = 0;
-var lastFindIndex = 0;
-var undoStack = [];
-var redoStack = [];
+var lastHTMLFindOnlyIndex = 0;
+var lastHTMLFindIndex = 0;
+var lastCSSFindOnlyIndex = 0;
+var lastCSSFindIndex = 0;
+var lastJsFindOnlyIndex = 0;
+var lastJsFindIndex = 0;
+var htmlUndoStack = [];
+var htmlRedoStack = [];
+var cssUndoStack = [];
+var cssRedoStack = [];
+var jsUndoStack = [];
+var jsRedoStack = [];
 
 window.addEventListener("beforeunload", function(e) {
 if (unsavedChanges) {
@@ -14,8 +22,9 @@ e.returnValue = "";
 
 window.onload = function() {
 var themeOBJ = document.getElementById("theme");
-var code = document.getElementById("code");
-var codeSelection = document.getElementById("codeSelection");
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
 if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
 localStorage.setItem("HEcodes", "[]");
 }
@@ -26,37 +35,91 @@ theme = "dark";
 }
 themeOBJ.value = theme;
 storeTheme();
-syntaxHighlight(code, "html");
+syntaxHighlight(html, "html");
+syntaxHighlight(css, "css");
+syntaxHighlight(javascript, "javascript");
 showCodes();
 });
 runCode();
 document.getElementById("result").blur();
 scrollTo(0, 0);
-code.addEventListener("scroll", function() {
-document.getElementById("lineList").parentElement.scrollTop = code.scrollTop;
+html.addEventListener("scroll", function() {
+document.getElementById("htmlLineList").parentElement.scrollTop = html.scrollTop;
 });
-code.addEventListener("beforeinput", saveCodeSnapshot);
-code.addEventListener("keydown", function(e) {
+css.addEventListener("scroll", function() {
+document.getElementById("cssLineList").parentElement.scrollTop = css.scrollTop;
+});
+javascript.addEventListener("scroll", function() {
+document.getElementById("javascriptLineList").parentElement.scrollTop = javascript.scrollTop;
+});
+html.addEventListener("beforeinput", saveHTMLCodeSnapshot);
+css.addEventListener("beforeinput", saveCSSCodeSnapshot);
+javascript.addEventListener("beforeinput", saveJsCodeSnapshot);
+html.addEventListener("keydown", function(e) {
 if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
 e.preventDefault();
-undo();
+HTMLUndo();
 }
 if ((e.ctrlKey && e.key.toLowerCase() === 'y') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z')) {
 e.preventDefault();
-redo();
+HTMLRedo();
 }
 if (e.ctrlKey && e.key.toLowerCase() === "f") {
 e.preventDefault();
-openFindOnly();
+openHTMLFindOnly();
 }
 if (e.ctrlKey && e.key.toLowerCase() === "h") {
 e.preventDefault();
-openFindReplace();
+openHTMLFindReplace();
 }
 });
-code.addEventListener("blur", function() {
-lastFindOnlyIndex = 0;
-lastFindIndex = 0;
+html.addEventListener("blur", function() {
+lastHTMLFindOnlyIndex = 0;
+lastHTMLFindIndex = 0;
+});
+css.addEventListener("keydown", function(e) {
+if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
+e.preventDefault();
+CSSUndo();
+}
+if ((e.ctrlKey && e.key.toLowerCase() === 'y') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z')) {
+e.preventDefault();
+CSSRedo();
+}
+if (e.ctrlKey && e.key.toLowerCase() === "f") {
+e.preventDefault();
+openCSSFindOnly();
+}
+if (e.ctrlKey && e.key.toLowerCase() === "h") {
+e.preventDefault();
+openCSSFindReplace();
+}
+});
+css.addEventListener("blur", function() {
+lastCSSFindOnlyIndex = 0;
+lastCSSFindIndex = 0;
+});
+javascript.addEventListener("keydown", function(e) {
+if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
+e.preventDefault();
+JsUndo();
+}
+if ((e.ctrlKey && e.key.toLowerCase() === 'y') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z')) {
+e.preventDefault();
+JsRedo();
+}
+if (e.ctrlKey && e.key.toLowerCase() === "f") {
+e.preventDefault();
+openJsFindOnly();
+}
+if (e.ctrlKey && e.key.toLowerCase() === "h") {
+e.preventDefault();
+openJsFindReplace();
+}
+});
+javascript.addEventListener("blur", function() {
+lastJsFindOnlyIndex = 0;
+lastJsFindIndex = 0;
 });
 document.body.addEventListener("keydown", function(e) {
 if (e.altKey && e.shiftKey && e.key === "Enter") {
@@ -73,7 +136,7 @@ blankCode();
 }
 if (e.altKey && e.shiftKey && e.key.toLowerCase() === "d") {
 e.preventDefault();
-downloadCode(document.getElementById("codeName").value.replaceLastPortion(".code", "") + ".html", document.getElementById("code").textContent, "html/plain");
+downloadCode(document.getElementById("codeName").value, document.getElementById("html").textContent, document.getElementById("css").textContent, document.getElementById("javascript").textContent);
 }
 if (e.altKey && e.shiftKey && e.key.toLowerCase() === "u") {
 e.preventDefault();
@@ -84,13 +147,17 @@ e.preventDefault();
 closeFindReplacePanels();
 }
 });
-document.getElementById("findOnlyInput").addEventListener("input", function() { lastFindOnlyIndex = 0; });
-document.getElementById("findText").addEventListener("input", function() { lastFindIndex = 0; });
+document.getElementById("htmlFindOnlyInput").addEventListener("input", function() { lastHTMLFindOnlyIndex = 0; });
+document.getElementById("htmlFindText").addEventListener("input", function() { lastHTMLFindIndex = 0; });
+document.getElementById("cssFindOnlyInput").addEventListener("input", function() { lastCSSFindOnlyIndex = 0; });
+document.getElementById("cssFindText").addEventListener("input", function() { lastCSSFindIndex = 0; });
+document.getElementById("javascriptFindOnlyInput").addEventListener("input", function() { lastJsFindOnlyIndex = 0; });
+document.getElementById("javascriptFindText").addEventListener("input", function() { lastJsFindIndex = 0; });
 }
 
 function invalidArray(array) {
 if (Array.isArray(array)) {
-return array.some(item => typeof item !== "object" || item === null || Object.keys(item).length !== 2 || !("codeName" in item) || !("code" in item));
+return array.some(item => typeof item !== "object" || item === null || Object.keys(item).length !== 4 || !("codeName" in item) || !("html" in item) || !("css" in item) || !("javascript" in item));
 }
 else {
 return true;
@@ -146,6 +213,9 @@ request.onerror = () => reject(request.error);
 
 function storeTheme() {
 var theme = document.getElementById("theme");
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
 var codeSelection = document.getElementById("codeSelection");
 if (theme.value == "light") {
 saveTheme("light");
@@ -153,25 +223,43 @@ theme.setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid
 document.getElementById("tutorials").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
 document.getElementById("search").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
 document.getElementById("codeName").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
-document.getElementById("findOnlyInput").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
-document.getElementById("findText").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
-document.getElementById("replaceText").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("htmlFindOnlyInput").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("htmlFindText").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("htmlReplaceText").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("cssFindOnlyInput").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("cssFindText").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("cssReplaceText").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("javascriptFindOnlyInput").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("javascriptFindText").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
+document.getElementById("javascriptReplaceText").setAttribute("style", "background: #f5f5f5; color: #222; border: 1px solid black !important;");
 document.getElementById("findReplaceCloseInfo").style.color = "black";
 document.getElementById("leftPane").setAttribute("style", "background: #dcdcdc; color: #222;");
 document.getElementById("debuggerSection").setAttribute("style", "background: #f0f0f0; color: #222;");
-codeSelection.innerHTML = "#code::selection, #code *::selection { background: #cce6ff; }";
+codeSelection.innerHTML = ".code::selection, .code *::selection { background: #cce6ff; }";
 document.getElementById("sidebar").setAttribute("style", "background: #eeeeee;");
 document.body.setAttribute("style", "background-color: #ffffff; color: #222;");
-code.setAttribute("style", "background-color: #ffffff; color: #111; caret-color: #000;");
+html.setAttribute("style", "background-color: #ffffff; color: #111; caret-color: #000;");
+css.setAttribute("style", "background-color: #ffffff; color: #111; caret-color: #000;");
+javascript.setAttribute("style", "background-color: #ffffff; color: #111; caret-color: #000;");
 document.getElementById("result").style.border = "1px solid #444";
-document.querySelector(".line-numbers").setAttribute("style",
+document.querySelector(".html-line-numbers").setAttribute("style",
+"background-color: #eaeaea; color: #555; padding-left: 8px;"
+);
+document.querySelector(".css-line-numbers").setAttribute("style",
+"background-color: #eaeaea; color: #555; padding-left: 8px;"
+);
+document.querySelector(".javascript-line-numbers").setAttribute("style",
 "background-color: #eaeaea; color: #555; padding-left: 8px;"
 );
 document.querySelector(".code-wrapper").setAttribute("style",
 "border: 1px solid black; background-color: #ffffff;"
 );
 document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #f8f8f8; color: #222; border: 1px solid black;");
-syntaxHighlight(document.getElementById("fixedCode"), "html");
+if (document.getElementById("mainFixedHTML") && document.getElementById("mainFixedCSS") && document.getElementById("mainFixedJavascript")) {
+syntaxHighlight(document.getElementById("mainFixedHTML"), "html");
+syntaxHighlight(document.getElementById("mainFixedCSS"), "css");
+syntaxHighlight(document.getElementById("mainFixedJavascript"), "javascript");
+}
 document.querySelectorAll("button").forEach(button => {
 button.style.background = "linear-gradient(135deg, #d9e6f2, #a6c8e0)";
 button.style.color = "#222";
@@ -184,25 +272,43 @@ theme.setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid
 document.getElementById("tutorials").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
 document.getElementById("search").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
 document.getElementById("codeName").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
-document.getElementById("findOnlyInput").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
-document.getElementById("findText").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
-document.getElementById("replaceText").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("htmlFindOnlyInput").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("htmlFindText").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("htmlReplaceText").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("cssFindOnlyInput").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("cssFindText").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("cssReplaceText").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("javascriptFindOnlyInput").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("javascriptFindText").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
+document.getElementById("javascriptReplaceText").setAttribute("style", "background: #1a1a1a; color: #eee; border: 1px solid white;");
 document.getElementById("findReplaceCloseInfo").style.color = "white";
 document.getElementById("leftPane").setAttribute("style", "background: #242424; color: #eee;");
 document.getElementById("debuggerSection").setAttribute("style", "background: #111111; color: #eee;");
-codeSelection.innerHTML = "#code::selection, #code *::selection { background: #204968; }";
+codeSelection.innerHTML = ".code::selection, .code *::selection { background: #204968; }";
 document.getElementById("sidebar").setAttribute("style", "background: #0d0d0d;");
 document.body.setAttribute("style", "background-color: #000000; color: #f5f5f5;");
-code.setAttribute("style", "background-color: #1e1e1e; color: #e5e5e5; caret-color: white;");
+html.setAttribute("style", "background-color: #1e1e1e; color: #e5e5e5; caret-color: white;");
+css.setAttribute("style", "background-color: #1e1e1e; color: #e5e5e5; caret-color: white;");
+javascript.setAttribute("style", "background-color: #1e1e1e; color: #e5e5e5; caret-color: white;");
 document.getElementById("result").style.border = "1px solid #ccc";
-document.querySelector(".line-numbers").setAttribute("style",
+document.querySelector(".html-line-numbers").setAttribute("style",
+"background-color: #151515; color: #d0d0d0; padding-left: 8px;"
+);
+document.querySelector(".css-line-numbers").setAttribute("style",
+"background-color: #151515; color: #d0d0d0; padding-left: 8px;"
+);
+document.querySelector(".javascript-line-numbers").setAttribute("style",
 "background-color: #151515; color: #d0d0d0; padding-left: 8px;"
 );
 document.querySelector(".code-wrapper").setAttribute("style",
 "border: 1px solid white; background-color: #151515;"
 );
 document.getElementById("debuggerPanelHolder").setAttribute("style", "background: #111; color: #eee; border: 1px solid white;");
-syntaxHighlight(document.getElementById("fixedCode"), "html");
+if (document.getElementById("mainFixedHTML") && document.getElementById("mainFixedCSS") && document.getElementById("mainFixedJavascript")) {
+syntaxHighlight(document.getElementById("mainFixedHTML"), "html");
+syntaxHighlight(document.getElementById("mainFixedCSS"), "css");
+syntaxHighlight(document.getElementById("mainFixedJavascript"), "javascript");
+}
 document.querySelectorAll("button").forEach(button => {
 button.style.background = "linear-gradient(135deg, #6A00F4, #9A1AFF)";
 button.style.color = "white";
@@ -210,17 +316,19 @@ button.style.color = "white";
 }
 }
 
-function saveCodeToLocalStorage(name, content) {
+function saveCodeToLocalStorage(name, htmlCode, cssCode, jsCode) {
 if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
 localStorage.setItem("HEcodes", "[]");
 }
 var codes = JSON.parse(localStorage.getItem("HEcodes"));
 var existingCodeIndex = codes.findIndex(item => item.codeName === name);
 if (existingCodeIndex !== -1) {
-codes[existingCodeIndex].code = content;
+codes[existingCodeIndex].html = htmlCode;
+codes[existingCodeIndex].css = cssCode;
+codes[existingCodeIndex].javascript = jsCode;
 }
 else {
-codes.push({codeName: name, code: content});
+codes.push({codeName: name, html: htmlCode, css: cssCode, javascript: jsCode});
 }
 localStorage.setItem("HEcodes", JSON.stringify(codes));
 }
@@ -231,7 +339,7 @@ localStorage.setItem("HEcodes", "[]");
 }
 var codes = JSON.parse(localStorage.getItem("HEcodes"));
 var code = codes.find(item => item.codeName === codeName);
-return code ? code.code : null;
+return code ? code : null;
 }
 
 function deleteCodeFromLocalStorage(codeName) {
@@ -259,23 +367,79 @@ textified = textified.replace(/>/g, "&gt;");
 return textified;
 }
 
-function openFindOnly() {
-document.getElementById("findReplaceBox").style.display = "none";
-document.getElementById("findBox").style.display = "block";
+function openHTMLFindOnly() {
+document.getElementById("htmlFindReplaceBox").style.display = "none";
+document.getElementById("htmlFindBox").style.display = "block";
+document.getElementById("cssFindReplaceBox").style.display = "none";
+document.getElementById("cssFindBox").style.display = "none";
+document.getElementById("javascriptFindReplaceBox").style.display = "none";
+document.getElementById("javascriptFindBox").style.display = "none";
 document.getElementById("findReplaceCloseInfo").style.display = "block";
-document.getElementById("findOnlyInput").focus();
+document.getElementById("htmlFindOnlyInput").focus();
 }
 
-function openFindReplace() {
-document.getElementById("findBox").style.display = "none";
-document.getElementById("findReplaceBox").style.display = "block";
+function openHTMLFindReplace() {
+document.getElementById("htmlFindBox").style.display = "none";
+document.getElementById("htmlFindReplaceBox").style.display = "block";
+document.getElementById("cssFindReplaceBox").style.display = "none";
+document.getElementById("cssFindBox").style.display = "none";
+document.getElementById("javascriptFindReplaceBox").style.display = "none";
+document.getElementById("javascriptFindBox").style.display = "none";
 document.getElementById("findReplaceCloseInfo").style.display = "block";
-document.getElementById("findText").focus();
+document.getElementById("htmlFindText").focus();
+}
+
+function openCSSFindOnly() {
+document.getElementById("cssFindReplaceBox").style.display = "none";
+document.getElementById("cssFindBox").style.display = "block";
+document.getElementById("htmlFindReplaceBox").style.display = "none";
+document.getElementById("htmlFindBox").style.display = "none";
+document.getElementById("javascriptFindReplaceBox").style.display = "none";
+document.getElementById("javascriptFindBox").style.display = "none";
+document.getElementById("findReplaceCloseInfo").style.display = "block";
+document.getElementById("cssFindOnlyInput").focus();
+}
+
+function openCSSFindReplace() {
+document.getElementById("cssFindBox").style.display = "none";
+document.getElementById("cssFindReplaceBox").style.display = "block";
+document.getElementById("htmlFindReplaceBox").style.display = "none";
+document.getElementById("htmlFindBox").style.display = "none";
+document.getElementById("javascriptFindReplaceBox").style.display = "none";
+document.getElementById("javascriptFindBox").style.display = "none";
+document.getElementById("findReplaceCloseInfo").style.display = "block";
+document.getElementById("cssFindText").focus();
+}
+
+function openJsFindOnly() {
+document.getElementById("javascriptFindReplaceBox").style.display = "none";
+document.getElementById("javascriptFindBox").style.display = "block";
+document.getElementById("htmlFindReplaceBox").style.display = "none";
+document.getElementById("htmlFindBox").style.display = "none";
+document.getElementById("cssFindReplaceBox").style.display = "none";
+document.getElementById("cssFindBox").style.display = "none";
+document.getElementById("findReplaceCloseInfo").style.display = "block";
+document.getElementById("javascriptFindOnlyInput").focus();
+}
+
+function openJsFindReplace() {
+document.getElementById("javascriptFindBox").style.display = "none";
+document.getElementById("javascriptFindReplaceBox").style.display = "block";
+document.getElementById("htmlFindReplaceBox").style.display = "none";
+document.getElementById("htmlFindBox").style.display = "none";
+document.getElementById("cssFindReplaceBox").style.display = "none";
+document.getElementById("cssFindBox").style.display = "none";
+document.getElementById("findReplaceCloseInfo").style.display = "block";
+document.getElementById("javascriptFindText").focus();
 }
 
 function closeFindReplacePanels() {
-document.getElementById("findBox").style.display = "none";
-document.getElementById("findReplaceBox").style.display = "none";
+document.getElementById("htmlFindBox").style.display = "none";
+document.getElementById("htmlFindReplaceBox").style.display = "none";
+document.getElementById("cssFindBox").style.display = "none";
+document.getElementById("cssFindReplaceBox").style.display = "none";
+document.getElementById("javascriptFindBox").style.display = "none";
+document.getElementById("javascriptFindReplaceBox").style.display = "none";
 document.getElementById("findReplaceCloseInfo").style.display = "none";
 }
 
@@ -326,24 +490,24 @@ const offsetLeft = rect.left - containerRect.left;
 code.scrollLeft += offsetLeft - code.clientWidth / 2 + rect.width / 2;
 }
 
-function findNextOnly() {
-const code = document.getElementById("code");
-const findVal = document.getElementById("findOnlyInput").value;
+function htmlFindNextOnly() {
+const html = document.getElementById("html");
+const findVal = document.getElementById("htmlFindOnlyInput").value;
 if (!findVal) {
 return;
 }
-const text = code.textContent;
-var startIndex = lastFindOnlyIndex;
+const text = html.textContent;
+var startIndex = lastHTMLFindOnlyIndex;
 const sel = window.getSelection();
 if (sel.rangeCount > 0 && sel.toString().length > 0) {
 const range = sel.getRangeAt(0);
 const preRange = document.createRange();
-preRange.selectNodeContents(code);
+preRange.selectNodeContents(html);
 preRange.setEnd(range.endContainer, range.endOffset);
 startIndex = preRange.toString().length;
 }
 else {
-const caretIndex = getCaretIndex(code);
+const caretIndex = getCaretIndex(html);
 if (caretIndex !== null) startIndex = caretIndex;
 }
 var index = text.indexOf(findVal, startIndex);
@@ -354,29 +518,29 @@ alert("No matches found.");
 return;
 }
 }
-highlightRange(code, index, index + findVal.length);
-lastFindOnlyIndex = index + findVal.length;
-scrollSelectionIntoView(code);
+highlightRange(html, index, index + findVal.length);
+lastHTMLFindOnlyIndex = index + findVal.length;
+scrollSelectionIntoView(html);
 }
 
-function findNext() {
-const code = document.getElementById("code");
-const findVal = document.getElementById("findText").value;
+function cssFindNextOnly() {
+const css = document.getElementById("css");
+const findVal = document.getElementById("cssFindOnlyInput").value;
 if (!findVal) {
 return;
 }
-const text = code.textContent;
-var startIndex = lastFindIndex;
+const text = css.textContent;
+var startIndex = lastCSSFindOnlyIndex;
 const sel = window.getSelection();
 if (sel.rangeCount > 0 && sel.toString().length > 0) {
 const range = sel.getRangeAt(0);
 const preRange = document.createRange();
-preRange.selectNodeContents(code);
+preRange.selectNodeContents(css);
 preRange.setEnd(range.endContainer, range.endOffset);
 startIndex = preRange.toString().length;
 }
 else {
-const caretIndex = getCaretIndex(code);
+const caretIndex = getCaretIndex(css);
 if (caretIndex !== null) startIndex = caretIndex;
 }
 var index = text.indexOf(findVal, startIndex);
@@ -387,22 +551,154 @@ alert("No matches found.");
 return;
 }
 }
-highlightRange(code, index, index + findVal.length);
-lastFindIndex = index + findVal.length;
-scrollSelectionIntoView(code);
+highlightRange(css, index, index + findVal.length);
+lastCSSFindOnlyIndex = index + findVal.length;
+scrollSelectionIntoView(css);
 }
 
-function replaceOne() {
-const code = document.getElementById("code");
-const findVal = document.getElementById("findText").value;
-const replaceVal = document.getElementById("replaceText").value;
+function javascriptFindNextOnly() {
+const javascript = document.getElementById("javascript");
+const findVal = document.getElementById("javascriptFindOnlyInput").value;
 if (!findVal) {
 return;
 }
-saveCodeSnapshot();
-const text = code.textContent;
-var startIndex = lastFindIndex;
-const caretIndex = getCaretIndex(code);
+const text = javascript.textContent;
+var startIndex = lastJsFindOnlyIndex;
+const sel = window.getSelection();
+if (sel.rangeCount > 0 && sel.toString().length > 0) {
+const range = sel.getRangeAt(0);
+const preRange = document.createRange();
+preRange.selectNodeContents(javascript);
+preRange.setEnd(range.endContainer, range.endOffset);
+startIndex = preRange.toString().length;
+}
+else {
+const caretIndex = getCaretIndex(javascript);
+if (caretIndex !== null) startIndex = caretIndex;
+}
+var index = text.indexOf(findVal, startIndex);
+if (index === -1) { 
+index = text.indexOf(findVal, 0);
+if (index === -1) {
+alert("No matches found.");
+return;
+}
+}
+highlightRange(javascript, index, index + findVal.length);
+lastJsFindOnlyIndex = index + findVal.length;
+scrollSelectionIntoView(javascript);
+}
+
+function htmlFindNext() {
+const html = document.getElementById("html");
+const findVal = document.getElementById("htmlFindText").value;
+if (!findVal) {
+return;
+}
+const text = html.textContent;
+var startIndex = lastHTMLFindIndex;
+const sel = window.getSelection();
+if (sel.rangeCount > 0 && sel.toString().length > 0) {
+const range = sel.getRangeAt(0);
+const preRange = document.createRange();
+preRange.selectNodeContents(html);
+preRange.setEnd(range.endContainer, range.endOffset);
+startIndex = preRange.toString().length;
+}
+else {
+const caretIndex = getCaretIndex(html);
+if (caretIndex !== null) startIndex = caretIndex;
+}
+var index = text.indexOf(findVal, startIndex);
+if (index === -1) { 
+index = text.indexOf(findVal, 0);
+if (index === -1) {
+alert("No matches found.");
+return;
+}
+}
+highlightRange(html, index, index + findVal.length);
+lastHTMLFindIndex = index + findVal.length;
+scrollSelectionIntoView(html);
+}
+
+function cssFindNext() {
+const css = document.getElementById("css");
+const findVal = document.getElementById("cssFindText").value;
+if (!findVal) {
+return;
+}
+const text = css.textContent;
+var startIndex = lastCSSFindIndex;
+const sel = window.getSelection();
+if (sel.rangeCount > 0 && sel.toString().length > 0) {
+const range = sel.getRangeAt(0);
+const preRange = document.createRange();
+preRange.selectNodeContents(css);
+preRange.setEnd(range.endContainer, range.endOffset);
+startIndex = preRange.toString().length;
+}
+else {
+const caretIndex = getCaretIndex(css);
+if (caretIndex !== null) startIndex = caretIndex;
+}
+var index = text.indexOf(findVal, startIndex);
+if (index === -1) { 
+index = text.indexOf(findVal, 0);
+if (index === -1) {
+alert("No matches found.");
+return;
+}
+}
+highlightRange(css, index, index + findVal.length);
+lastCSSFindIndex = index + findVal.length;
+scrollSelectionIntoView(css);
+}
+
+function javascriptFindNext() {
+const javascript = document.getElementById("javascript");
+const findVal = document.getElementById("javascriptFindText").value;
+if (!findVal) {
+return;
+}
+const text = javascript.textContent;
+var startIndex = lastJsFindIndex;
+const sel = window.getSelection();
+if (sel.rangeCount > 0 && sel.toString().length > 0) {
+const range = sel.getRangeAt(0);
+const preRange = document.createRange();
+preRange.selectNodeContents(javascript);
+preRange.setEnd(range.endContainer, range.endOffset);
+startIndex = preRange.toString().length;
+}
+else {
+const caretIndex = getCaretIndex(javascript);
+if (caretIndex !== null) startIndex = caretIndex;
+}
+var index = text.indexOf(findVal, startIndex);
+if (index === -1) { 
+index = text.indexOf(findVal, 0);
+if (index === -1) {
+alert("No matches found.");
+return;
+}
+}
+highlightRange(javascript, index, index + findVal.length);
+lastJsFindIndex = index + findVal.length;
+scrollSelectionIntoView(javascript);
+}
+
+function htmlReplaceOne() {
+const html = document.getElementById("html");
+const findVal = document.getElementById("htmlFindText").value;
+const replaceVal = document.getElementById("htmlReplaceText").value;
+if (!findVal) {
+return;
+}
+saveHTMLCodeSnapshot();
+const text = html.textContent;
+var startIndex = lastHTMLFindIndex;
+const caretIndex = getCaretIndex(html);
 if (caretIndex !== null) startIndex = caretIndex;
 var index = text.indexOf(findVal, startIndex);
 if (index === -1) {
@@ -412,14 +708,14 @@ alert("No matches found.");
 return;
 }
 }
-code.textContent = text.slice(0, index) + replaceVal + text.slice(index + findVal.length);
-syntaxHighlightContentEditableElement(code, "html");
-code.focus();
+html.textContent = text.slice(0, index) + replaceVal + text.slice(index + findVal.length);
+syntaxHighlightContentEditableElement(html, "html");
+html.focus();
 const sel = window.getSelection();
 const range = document.createRange();
 var charIndex = 0;
 var endNode = null;
-const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+const walker = document.createTreeWalker(html, NodeFilter.SHOW_TEXT);
 while (walker.nextNode()) {
 const node = walker.currentNode;
 const nextIndex = charIndex + node.textContent.length;
@@ -434,71 +730,257 @@ charIndex = nextIndex;
 if (endNode) {
 sel.removeAllRanges();
 sel.addRange(range);
-scrollSelectionIntoView(code);
+scrollSelectionIntoView(html);
 }
-lastFindIndex = index + replaceVal.length;
+lastHTMLFindIndex = index + replaceVal.length;
 }
 
-function replaceAll() {
-const code = document.getElementById("code");
-const findVal = document.getElementById("findText").value;
-const replaceVal = document.getElementById("replaceText").value;
+function cssReplaceOne() {
+const css = document.getElementById("css");
+const findVal = document.getElementById("cssFindText").value;
+const replaceVal = document.getElementById("cssReplaceText").value;
 if (!findVal) {
 return;
 }
-saveCodeSnapshot();
-code.textContent = code.textContent.split(findVal).join(replaceVal);
-syntaxHighlightContentEditableElement(code, "html");
-lastFindOnlyIndex = 0;
-lastFindIndex = 0;
-code.blur();
-alert("All occurances replaced.");
+saveCSSCodeSnapshot();
+const text = css.textContent;
+var startIndex = lastCSSFindIndex;
+const caretIndex = getCaretIndex(css);
+if (caretIndex !== null) startIndex = caretIndex;
+var index = text.indexOf(findVal, startIndex);
+if (index === -1) {
+index = text.indexOf(findVal, 0);
+if (index === -1) {
+alert("No matches found.");
+return;
+}
+}
+css.textContent = text.slice(0, index) + replaceVal + text.slice(index + findVal.length);
+syntaxHighlightContentEditableElement(css, "css");
+css.focus();
+const sel = window.getSelection();
+const range = document.createRange();
+var charIndex = 0;
+var endNode = null;
+const walker = document.createTreeWalker(css, NodeFilter.SHOW_TEXT);
+while (walker.nextNode()) {
+const node = walker.currentNode;
+const nextIndex = charIndex + node.textContent.length;
+if (!endNode && index + replaceVal.length <= nextIndex) {
+endNode = node;
+range.setStart(node, index + replaceVal.length - charIndex);
+range.collapse(true);
+break;
+}
+charIndex = nextIndex;
+}
+if (endNode) {
+sel.removeAllRanges();
+sel.addRange(range);
+scrollSelectionIntoView(css);
+}
+lastCSSFindIndex = index + replaceVal.length;
 }
 
-function saveCodeSnapshot() {
-const code = document.getElementById("code");
+function javascriptReplaceOne() {
+const javascript = document.getElementById("javascript");
+const findVal = document.getElementById("javascriptFindText").value;
+const replaceVal = document.getElementById("javascriptReplaceText").value;
+if (!findVal) {
+return;
+}
+saveJsCodeSnapshot();
+const text = javascript.textContent;
+var startIndex = lastJsFindIndex;
+const caretIndex = getCaretIndex(javascript);
+if (caretIndex !== null) startIndex = caretIndex;
+var index = text.indexOf(findVal, startIndex);
+if (index === -1) {
+index = text.indexOf(findVal, 0);
+if (index === -1) {
+alert("No matches found.");
+return;
+}
+}
+javascript.textContent = text.slice(0, index) + replaceVal + text.slice(index + findVal.length);
+syntaxHighlightContentEditableElement(javascript, "javascript");
+javascript.focus();
+const sel = window.getSelection();
+const range = document.createRange();
+var charIndex = 0;
+var endNode = null;
+const walker = document.createTreeWalker(javascript, NodeFilter.SHOW_TEXT);
+while (walker.nextNode()) {
+const node = walker.currentNode;
+const nextIndex = charIndex + node.textContent.length;
+if (!endNode && index + replaceVal.length <= nextIndex) {
+endNode = node;
+range.setStart(node, index + replaceVal.length - charIndex);
+range.collapse(true);
+break;
+}
+charIndex = nextIndex;
+}
+if (endNode) {
+sel.removeAllRanges();
+sel.addRange(range);
+scrollSelectionIntoView(javascript);
+}
+lastJsFindIndex = index + replaceVal.length;
+}
+
+function htmlReplaceAll() {
+const html = document.getElementById("html");
+const findVal = document.getElementById("htmlFindText").value;
+const replaceVal = document.getElementById("htmlReplaceText").value;
+if (!findVal) {
+return;
+}
+saveHTMLCodeSnapshot();
+html.textContent = html.textContent.split(findVal).join(replaceVal);
+syntaxHighlightContentEditableElement(html, "html");
+lastHTMLFindOnlyIndex = 0;
+lastHTMLFindIndex = 0;
+html.blur();
+alert("All occurrences replaced.");
+}
+
+function cssReplaceAll() {
+const css = document.getElementById("css");
+const findVal = document.getElementById("cssFindText").value;
+const replaceVal = document.getElementById("cssReplaceText").value;
+if (!findVal) {
+return;
+}
+saveCSSCodeSnapshot();
+css.textContent = css.textContent.split(findVal).join(replaceVal);
+syntaxHighlightContentEditableElement(css, "css");
+lastCSSFindOnlyIndex = 0;
+lastCSSFindIndex = 0;
+css.blur();
+alert("All occurrences replaced.");
+}
+
+function javascriptReplaceAll() {
+const javascript = document.getElementById("javascript");
+const findVal = document.getElementById("javascriptFindText").value;
+const replaceVal = document.getElementById("javascriptReplaceText").value;
+if (!findVal) {
+return;
+}
+saveJsCodeSnapshot();
+javascript.textContent = javascript.textContent.split(findVal).join(replaceVal);
+syntaxHighlightContentEditableElement(javascript, "javascript");
+lastJsFindOnlyIndex = 0;
+lastJsFindIndex = 0;
+javascript.blur();
+alert("All occurrences replaced.");
+}
+
+function saveHTMLCodeSnapshot() {
+const html = document.getElementById("html");
 const sel = window.getSelection();
 var range = null;
 if (sel.rangeCount > 0) {
 const r = sel.getRangeAt(0);
-if (code.contains(r.startContainer) && code.contains(r.endContainer)) {
+if (html.contains(r.startContainer) && html.contains(r.endContainer)) {
 range = r;
 }
 }
 const snapshot = {
-text: code.textContent,
+text: html.textContent,
 selection: null,
-scrollTop: code.scrollTop
+scrollTop: html.scrollTop,
+scrollLeft: html.scrollLeft
 };
 if (range) {
 snapshot.selection = {
-startContainerPath: getNodePath(range.startContainer, code),
+startContainerPath: getNodePath(range.startContainer, html),
 startOffset: range.startOffset,
-endContainerPath: getNodePath(range.endContainer, code),
+endContainerPath: getNodePath(range.endContainer, html),
 endOffset: range.endOffset
 };
 }
-undoStack.push(snapshot);
-redoStack = [];
+htmlUndoStack.push(snapshot);
+htmlRedoStack = [];
 }
 
-function restoreSnapshot(snapshot) {
-const code = document.getElementById("code");
+function saveCSSCodeSnapshot() {
+const css = document.getElementById("css");
+const sel = window.getSelection();
+var range = null;
+if (sel.rangeCount > 0) {
+const r = sel.getRangeAt(0);
+if (css.contains(r.startContainer) && css.contains(r.endContainer)) {
+range = r;
+}
+}
+const snapshot = {
+text: css.textContent,
+selection: null,
+scrollTop: css.scrollTop,
+scrollLeft: css.scrollLeft
+};
+if (range) {
+snapshot.selection = {
+startContainerPath: getNodePath(range.startContainer, css),
+startOffset: range.startOffset,
+endContainerPath: getNodePath(range.endContainer, css),
+endOffset: range.endOffset
+};
+}
+cssUndoStack.push(snapshot);
+cssRedoStack = [];
+}
+
+function saveJsCodeSnapshot() {
+const javascript = document.getElementById("javascript");
+const sel = window.getSelection();
+var range = null;
+if (sel.rangeCount > 0) {
+const r = sel.getRangeAt(0);
+if (javascript.contains(r.startContainer) && javascript.contains(r.endContainer)) {
+range = r;
+}
+}
+const snapshot = {
+text: javascript.textContent,
+selection: null,
+scrollTop: javascript.scrollTop,
+scrollLeft: javascript.scrollLeft
+};
+if (range) {
+snapshot.selection = {
+startContainerPath: getNodePath(range.startContainer, javascript),
+startOffset: range.startOffset,
+endContainerPath: getNodePath(range.endContainer, javascript),
+endOffset: range.endOffset
+};
+}
+jsUndoStack.push(snapshot);
+jsRedoStack = [];
+}
+
+function restoreHTMLSnapshot(snapshot) {
+const html = document.getElementById("html");
 if (snapshot.text !== undefined) {
-code.textContent = snapshot.text;
-syntaxHighlightContentEditableElement(code, "html");
-updateText(code);
-updateLineNumbers(code, document.getElementById('lineList'));
+html.textContent = snapshot.text;
+syntaxHighlightContentEditableElement(html, "html");
+updateText();
+updateLineNumbers(html, document.getElementById('htmlLineList'));
 }
 if (typeof snapshot.scrollTop === "number") {
-code.scrollTop = snapshot.scrollTop;
+html.scrollTop = snapshot.scrollTop;
+}
+if (typeof snapshot.scrollLeft === "number") {
+html.scrollLeft = snapshot.scrollLeft;
 }
 if (snapshot.selection) {
 const sel = window.getSelection();
 sel.removeAllRanges();
 const range = document.createRange();
-const startNode = getNodeFromPath(snapshot.selection.startContainerPath, code);
-const endNode = getNodeFromPath(snapshot.selection.endContainerPath, code);
+const startNode = getNodeFromPath(snapshot.selection.startContainerPath, html);
+const endNode = getNodeFromPath(snapshot.selection.endContainerPath, html);
 if (startNode && endNode) {
 range.setStart(startNode, Math.min(snapshot.selection.startOffset, startNode.textContent.length));
 range.setEnd(endNode, Math.min(snapshot.selection.endOffset, endNode.textContent.length));
@@ -507,6 +989,61 @@ sel.addRange(range);
 }
 }
 
+function restoreCSSSnapshot(snapshot) {
+const css = document.getElementById("css");
+if (snapshot.text !== undefined) {
+css.textContent = snapshot.text;
+syntaxHighlightContentEditableElement(css, "css");
+updateText();
+updateLineNumbers(css, document.getElementById('cssLineList'));
+}
+if (typeof snapshot.scrollTop === "number") {
+css.scrollTop = snapshot.scrollTop;
+}
+if (typeof snapshot.scrollLeft === "number") {
+css.scrollLeft = snapshot.scrollLeft;
+}
+if (snapshot.selection) {
+const sel = window.getSelection();
+sel.removeAllRanges();
+const range = document.createRange();
+const startNode = getNodeFromPath(snapshot.selection.startContainerPath, css);
+const endNode = getNodeFromPath(snapshot.selection.endContainerPath, css);
+if (startNode && endNode) {
+range.setStart(startNode, Math.min(snapshot.selection.startOffset, startNode.textContent.length));
+range.setEnd(endNode, Math.min(snapshot.selection.endOffset, endNode.textContent.length));
+sel.addRange(range);
+}
+}
+}
+
+function restoreJsSnapshot(snapshot) {
+const javascript = document.getElementById("javascript");
+if (snapshot.text !== undefined) {
+javascript.textContent = snapshot.text;
+syntaxHighlightContentEditableElement(javascript, "javascript");
+updateText();
+updateLineNumbers(javascript, document.getElementById('javascriptLineList'));
+}
+if (typeof snapshot.scrollTop === "number") {
+javascript.scrollTop = snapshot.scrollTop;
+}
+if (typeof snapshot.scrollLeft === "number") {
+javascript.scrollLeft = snapshot.scrollLeft;
+}
+if (snapshot.selection) {
+const sel = window.getSelection();
+sel.removeAllRanges();
+const range = document.createRange();
+const startNode = getNodeFromPath(snapshot.selection.startContainerPath, javascript);
+const endNode = getNodeFromPath(snapshot.selection.endContainerPath, javascript);
+if (startNode && endNode) {
+range.setStart(startNode, Math.min(snapshot.selection.startOffset, startNode.textContent.length));
+range.setEnd(endNode, Math.min(snapshot.selection.endOffset, endNode.textContent.length));
+sel.addRange(range);
+}
+}
+}
 
 function getNodePath(node, root) {
 const path = [];
@@ -527,45 +1064,130 @@ node = node.childNodes[path[i]];
 return node;
 }
 
-function getCurrentSelectionSnapshot() {
-const code = document.getElementById("code");
+function getCurrentHTMLSelectionSnapshot() {
+const html = document.getElementById("html");
 const sel = window.getSelection();
 if (sel.rangeCount === 0) {
 return null;
 }
 const range = sel.getRangeAt(0);
 return {
-startContainerPath: getNodePath(range.startContainer, code),
+startContainerPath: getNodePath(range.startContainer, html),
 startOffset: range.startOffset,
-endContainerPath: getNodePath(range.endContainer, code),
+endContainerPath: getNodePath(range.endContainer, html),
 endOffset: range.endOffset
 };
 }
 
-function applySnapshot(fromStack, toStack) {
-const code = document.getElementById("code");
+function getCurrentCSSSelectionSnapshot() {
+const css = document.getElementById("css");
+const sel = window.getSelection();
+if (sel.rangeCount === 0) {
+return null;
+}
+const range = sel.getRangeAt(0);
+return {
+startContainerPath: getNodePath(range.startContainer, css),
+startOffset: range.startOffset,
+endContainerPath: getNodePath(range.endContainer, css),
+endOffset: range.endOffset
+};
+}
+
+function getCurrentJsSelectionSnapshot() {
+const javascript = document.getElementById("javascript");
+const sel = window.getSelection();
+if (sel.rangeCount === 0) {
+return null;
+}
+const range = sel.getRangeAt(0);
+return {
+startContainerPath: getNodePath(range.startContainer, javascript),
+startOffset: range.startOffset,
+endContainerPath: getNodePath(range.endContainer, javascript),
+endOffset: range.endOffset
+};
+}
+
+function applyHTMLSnapshot(fromStack, toStack) {
+const html = document.getElementById("html");
 if (fromStack.length === 0) {
 return;
 }
 const snapshot = fromStack.pop();
 toStack.push({
-text: code.textContent,
-selection: getCurrentSelectionSnapshot(),
-scrollTop: code.scrollTop
+text: html.textContent,
+selection: getCurrentHTMLSelectionSnapshot(),
+scrollTop: html.scrollTop,
+scrollLeft: html.scrollLeft
 });
-restoreSnapshot(snapshot);
+restoreHTMLSnapshot(snapshot);
 document.getElementById("editorPane").scrollIntoView({
 behavior: "smooth",
 block: "start"
 });
 }
 
-function undo() {
-applySnapshot(undoStack, redoStack);
+function applyCSSSnapshot(fromStack, toStack) {
+const css = document.getElementById("css");
+if (fromStack.length === 0) {
+return;
+}
+const snapshot = fromStack.pop();
+toStack.push({
+text: css.textContent,
+selection: getCurrentCSSSelectionSnapshot(),
+scrollTop: css.scrollTop,
+scrollLeft: css.scrollLeft
+});
+restoreCSSSnapshot(snapshot);
+document.getElementById("editorPane").scrollIntoView({
+behavior: "smooth",
+block: "start"
+});
 }
 
-function redo() {
-applySnapshot(redoStack, undoStack);
+function applyJsSnapshot(fromStack, toStack) {
+const javascript = document.getElementById("javascript");
+if (fromStack.length === 0) {
+return;
+}
+const snapshot = fromStack.pop();
+toStack.push({
+text: javascript.textContent,
+selection: getCurrentJsSelectionSnapshot(),
+scrollTop: javascript.scrollTop,
+scrollLeft: javascript.scrollLeft
+});
+restoreJsSnapshot(snapshot);
+document.getElementById("editorPane").scrollIntoView({
+behavior: "smooth",
+block: "start"
+});
+}
+
+function HTMLUndo() {
+applyHTMLSnapshot(htmlUndoStack, htmlRedoStack);
+}
+
+function CSSUndo() {
+applyCSSSnapshot(cssUndoStack, cssRedoStack);
+}
+
+function JsUndo() {
+applyJsSnapshot(jsUndoStack, jsRedoStack);
+}
+
+function HTMLRedo() {
+applyHTMLSnapshot(htmlRedoStack, htmlUndoStack);
+}
+
+function CSSRedo() {
+applyCSSSnapshot(cssRedoStack, cssUndoStack);
+}
+
+function JsRedo() {
+applyJsSnapshot(jsRedoStack, jsUndoStack);
 }
 
 function showCodes() {
@@ -584,27 +1206,37 @@ codesLength.innerHTML = "You have saved " + storedCodes.length + " code(s)."
 
 function openCode(anyCode) {
 var codeName = document.getElementById("codeName");
-var code = document.getElementById("code");
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
 var confirmOpenCode;
-if (code.textContent.length > 0) {
+if (html.textContent.length > 0 || css.textContent.length > 0 || javascript.textContent.length > 0) {
 confirmOpenCode = confirm("Are you sure you want to open this code? Changes may not be saved.");
 if (confirmOpenCode == true) {
 blankCodeWithoutConfirmation();
 codeName.value = anyCode.textContent;
-code.innerHTML = retreiveCodeFromLocalStorage(anyCode.textContent).textify();
+html.innerHTML = retreiveCodeFromLocalStorage(anyCode.textContent).html.textify();
+css.innerHTML = retreiveCodeFromLocalStorage(anyCode.textContent).css.textify();
+javascript.innerHTML = retreiveCodeFromLocalStorage(anyCode.textContent).javascript.textify();
 runCode();
 document.title = anyCode.textContent + " - " + defaultTitle;
-syntaxHighlight(code, "html");
+syntaxHighlight(html, "html");
+syntaxHighlight(css, "css");
+syntaxHighlight(javascript, "javascript");
 window.onbeforeunload = null;
 }
 }
-else if (code.textContent.length == 0) {
+else {
 blankCodeWithoutConfirmation();
 codeName.value = anyCode.textContent;
-code.innerHTML = retreiveCodeFromLocalStorage(anyCode.textContent).textify();
+html.innerHTML = retreiveCodeFromLocalStorage(anyCode.textContent).html.textify();
+css.innerHTML = retreiveCodeFromLocalStorage(anyCode.textContent).css.textify();
+javascript.innerHTML = retreiveCodeFromLocalStorage(anyCode.textContent).javascript.textify();
 runCode();
 document.title = anyCode.textContent + " - " + defaultTitle;
-syntaxHighlight(code, "html");
+syntaxHighlight(html, "html");
+syntaxHighlight(css, "css");
+syntaxHighlight(javascript, "javascript");
 window.onbeforeunload = null;
 }
 }
@@ -615,17 +1247,20 @@ var open = document.getElementById("open");
 var del = document.getElementById("del");
 var download = document.getElementById("download");
 var copyCodeName = document.getElementById("copyCodeName");
-var copyCode = document.getElementById("copyCode");
-var printCodeBtn = document.getElementById("printCode");
+var copyHTML = document.getElementById("copyHTML");
+var copyCSS = document.getElementById("copyCSS");
+var copyJavascript = document.getElementById("copyJavascript");
 e.preventDefault();
 fileMenu.style.left = e.pageX + "px";
 fileMenu.style.top = e.pageY + "px";
 fileMenu.style.display = "block";
 open.setAttribute("onclick", "openCode(document.getElementById('" + anyCode.id + "'))");
 del.setAttribute("onclick", "deleteCode(document.getElementById('" + anyCode.id + "'))");
-download.setAttribute("onclick", "downloadCode('" + anyCode.id + "'.replaceLastPortion('.code', '') + '.html', retreiveCodeFromLocalStorage('" + anyCode.id + "'), 'html/plain')");
+download.setAttribute("onclick", "downloadCode('" + anyCode.id + "', retreiveCodeFromLocalStorage('" + anyCode.id + "').html, retreiveCodeFromLocalStorage('" + anyCode.id + "').css, retreiveCodeFromLocalStorage('" + anyCode.id + "').javascript)");
 copyCodeName.setAttribute("onclick", "copyCodeName(document.getElementById('" + anyCode.id + "'))");
-copyCode.setAttribute("onclick", "copyCode(document.getElementById('" + anyCode.id + "'))");
+copyHTML.setAttribute("onclick", "copyHTML(document.getElementById('" + anyCode.id + "'))");
+copyCSS.setAttribute("onclick", "copyCSS(document.getElementById('" + anyCode.id + "'))");
+copyJavascript.setAttribute("onclick", "copyJavascript(document.getElementById('" + anyCode.id + "'))");
 document.addEventListener("click", function() {
 fileMenu.removeAttribute("style");
 document.querySelectorAll("#fileMenu div").forEach(function(menuItem) {
@@ -645,22 +1280,42 @@ document.body.removeChild(textarea);
 alert("Code name copied successfully.");
 }
 
-function copyCode(anyCode) {
+function copyHTML(anyCode) {
 var textarea = document.createElement("textarea");
 document.body.appendChild(textarea);
-textarea.value = retreiveCodeFromLocalStorage(anyCode.textContent);
+textarea.value = retreiveCodeFromLocalStorage(anyCode.textContent).html;
 textarea.select();
 document.execCommand("copy");
 document.body.removeChild(textarea);
-alert("Code copied successfully.");
+alert("HTML copied successfully.");
+}
+
+function copyCSS(anyCode) {
+var textarea = document.createElement("textarea");
+document.body.appendChild(textarea);
+textarea.value = retreiveCodeFromLocalStorage(anyCode.textContent).css;
+textarea.select();
+document.execCommand("copy");
+document.body.removeChild(textarea);
+alert("CSS copied successfully.");
+}
+
+function copyJavascript(anyCode) {
+var textarea = document.createElement("textarea");
+document.body.appendChild(textarea);
+textarea.value = retreiveCodeFromLocalStorage(anyCode.textContent).javascript;
+textarea.select();
+document.execCommand("copy");
+document.body.removeChild(textarea);
+alert("Javascript copied successfully.");
 }
 
 function deleteCode(anyCode) {
 var codeName = document.getElementById("codeName");
-var code = document.getElementById("code");
+var html = document.getElementById("html");
 var confirmDeleteCode = confirm("Are you sure you want to delete this code?");
 if (confirmDeleteCode == true) {
-if (code.textContent == retreiveCodeFromLocalStorage(anyCode.parentElement.firstElementChild.textContent) && codeName.value == anyCode.parentElement.firstElementChild.textContent) {
+if (html.textContent == retreiveCodeFromLocalStorage(anyCode.parentElement.firstElementChild.textContent).html && css.textContent == retreiveCodeFromLocalStorage(anyCode.parentElement.firstElementChild.textContent).css && javascript.textContent == retreiveCodeFromLocalStorage(anyCode.parentElement.firstElementChild.textContent).javascript && codeName.value == anyCode.parentElement.firstElementChild.textContent) {
 blankCodeWithoutConfirmation();
 }
 deleteCodeFromLocalStorage(anyCode.parentElement.firstElementChild.textContent);
@@ -669,26 +1324,35 @@ showCodes();
 }
 
 async function AIdebugger() {
-var code = document.getElementById("code").innerText.trim();
+var htmlCode = document.getElementById("html").innerText.trim();
+var cssCode = document.getElementById("css").innerText.trim();
+var jsCode = document.getElementById("javascript").innerText.trim();
 var debuggerPanel = document.getElementById("debuggerPanel");
-var fixedCode = document.getElementById("fixedCode");
+var fixedHTML = document.getElementById("fixedHTML");
+var fixedCSS = document.getElementById("fixedCSS");
+var fixedJs = document.getElementById("fixedJavascript");
 debuggerPanel.innerHTML = "Please wait while we process your code...";
-fixedCode.textContent = "";
-try {
+fixedHTML.textContent = "";
+fixedCSS.textContent = "";
+fixedJavascript.textContent = "";
 await fetch("https://html-editor-backend.vercel.app/").catch(() => {});
 const res = await fetch("https://html-editor-backend.vercel.app/debug", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ code }),
+body: JSON.stringify({
+html: htmlCode,
+css: cssCode,
+javascript: jsCode,
+}),
 });
 if (!res.ok) {
 debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}: ${res.statusText}</div>`;
 return;
 }
 const data = await res.json();
-var text = data.choices?.[0]?.message?.content;
-if (!text || text.trim() === "") {
-const requestsRemaining = data.remainingRequests;
+const { errors, fixes, fixedHTMLCode, fixedCSSCode, fixedJsCode, remainingRequests } = data;
+if (!errors || errors.trim() === "") {
+const requestsRemaining = remainingRequests;
 var msg;
 if (requestsRemaining == null) {
 msg = "AI model used for debugging is currently overloaded. Please try again later.";
@@ -699,39 +1363,60 @@ msg = "Your 50-request limit is over for today. Please try again tomorrow.";
 debuggerPanel.innerHTML = `<div class="error-text">${msg}</div>`;
 return;
 }
-text = text.replace(/```(html|js|javascript|css)?/gi, "").replace(/```/g, "").trim();
-const errorMatch = text.match(/ERRORS:\s*([\s\S]*?)SUGGESTED FIXES:/i);
-const fixMatch = text.match(/SUGGESTED FIXES:\s*([\s\S]*?)FULL FIXED CODE:/i);
-const codeMatch = text.match(/FULL FIXED CODE:\s*([\s\S]*)/i);
-const errorText = errorMatch[1].trim();
-const fixText = fixMatch[1].trim();
-const codeText = codeMatch ? codeMatch[1].trim() : "";
-debuggerPanel.innerHTML = `<div class="error-text"><u>ERRORS</u>:<br> ${errorText.textify()}</div>
-<div class="fix-text"><u>SUGGESTED FIXES</u>:<br> ${fixText.textify()}</div><br><u class="fix-text">FULL FIXED CODE</u>:<span style="float: right; color: #4AA8FF; cursor: pointer; text-decoration: underline;" onclick="copyFixedCode()">(Copy Fixed Code)</span>`;
-fixedCode.innerHTML = codeText.textify();
-syntaxHighlight(fixedCode, "html");
-} catch (err) {
-debuggerPanel.innerHTML = `<div class="error-text">Error: ${err.message}</div>`;
-}
+debuggerPanel.innerHTML = `<div class="error-text"><u>ERRORS:</u><br>${errors.textify()}</div>
+<div class="fix-text"><u>SUGGESTED FIXES:</u><br>${fixes.textify()}</div>`;
+fixedHTML.innerHTML = `<u><div style="display: flex;"><span class="fix-text">FULL FIXED HTML:</span><span style="color: #808080; margin-left: auto; cursor: pointer;" onclick="copyFixedHTML()">Copy Fixed HTML</span></div></u><br><span id="mainFixedHTML">${fixedHTMLCode.textify()}</span>`;
+fixedCSS.innerHTML = `<u><div style="display: flex;"><span class="fix-text">FULL FIXED CSS:</span><span style="color: #808080; margin-left: auto; cursor: pointer;" onclick="copyFixedCSS()">Copy Fixed CSS</span></div></u><br><span id="mainFixedCSS">${fixedCSSCode.textify()}</span>`;
+fixedJavascript.innerHTML = `<u><div style="display: flex;"><span class="fix-text">FULL FIXED JAVASCRIPT:</span><span style="color: #808080; margin-left: auto; cursor: pointer;" onclick="copyFixedJavascript()">Copy Fixed Javascript</span></div></u><br><span id="mainFixedJavascript">${fixedJsCode.textify()}</span>`;
+syntaxHighlight(document.getElementById("mainFixedHTML"), "html");
+syntaxHighlight(document.getElementById("mainFixedCSS"), "css");
+syntaxHighlight(document.getElementById("mainFixedJavascript"), "javascript");
 }
 
-function copyFixedCode() {
+function copyFixedHTML() {
 var textarea = document.createElement("textarea");
-var fixedCode = document.getElementById("fixedCode");
+var fixedHTML = document.getElementById("mainFixedHTML");
 document.body.appendChild(textarea);
-textarea.value = fixedCode.textContent;
+textarea.value = fixedHTML.textContent;
 textarea.select();
 document.execCommand("copy");
 document.body.removeChild(textarea);
-alert("Fixed code copied successfully.");
+alert("Fixed HTML copied successfully.");
+}
+
+function copyFixedCSS() {
+var textarea = document.createElement("textarea");
+var fixedCSS = document.getElementById("mainFixedCSS");
+document.body.appendChild(textarea);
+textarea.value = fixedCSS.textContent;
+textarea.select();
+document.execCommand("copy");
+document.body.removeChild(textarea);
+alert("Fixed CSS copied successfully.");
+}
+
+function copyFixedJavascript() {
+var textarea = document.createElement("textarea");
+var fixedJavascript = document.getElementById("mainFixedJavascript");
+document.body.appendChild(textarea);
+textarea.value = fixedJavascript.textContent;
+textarea.select();
+document.execCommand("copy");
+document.body.removeChild(textarea);
+alert("Fixed Javascript copied successfully.");
 }
 
 function runCode() {
-var code = document.getElementById("code");
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
 var result = document.getElementById("result");
-var script = document.createElement("script");
-updateLineNumbers(code, document.getElementById("lineList"));
-result.srcdoc = code.innerText;
+var srcCode = html.innerText;
+srcCode += "<style>" + css.textContent.replace(/<\/(style)>/gi, '<\\/$1>') + "</style><script>" + javascript.textContent.replace(/<\/(script)>/gi, '<\\/$1>') + "</script>";
+updateLineNumbers(html, document.getElementById("htmlLineList"));
+updateLineNumbers(css, document.getElementById("cssLineList"));
+updateLineNumbers(javascript, document.getElementById("javascriptLineList"));
+result.srcdoc = srcCode;
 result.focus();
 document.getElementById("editorPane").scrollIntoView({
 behavior: "smooth",
@@ -774,137 +1459,309 @@ result.focus();
 
 function clearDebuggerPanel() {
 document.getElementById("debuggerPanel").innerHTML = "";
-document.getElementById("fixedCode").innerHTML = "";
+document.getElementById("fixedHTML").innerHTML = "";
+document.getElementById("fixedCSS").innerHTML = "";
+document.getElementById("fixedJavascript").innerHTML = "";
 }
 
 function saveCode() {
 var codeName = document.getElementById("codeName");
-var code = document.getElementById("code");
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
 if (codeName.value.endsWith(".code")) {
-saveCodeToLocalStorage(codeName.value, code.textContent);
+saveCodeToLocalStorage(codeName.value, html.textContent, css.textContent, javascript.textContent);
 }
 else {
-saveCodeToLocalStorage(codeName.value + ".code", code.textContent);
+saveCodeToLocalStorage(codeName.value + ".code", html.textContent, css.textContent, javascript.textContent);
 }
 showCodes();
 blankCodeWithoutConfirmation();
 }
 
-function downloadCode(name, content, type) {
-var file = new Blob([content], {type: type});
-var link = document.createElement("a");
-link.textContent = name;
-link.href = URL.createObjectURL(file);
-link.download = name;
+function downloadCode(codeName, htmlCode, cssCode, javascriptCode) {
+html = htmlCode;
+css = cssCode;
+js = javascriptCode;
+function mainDownloadZip(baseName, htmlContent, cssContent, jsContent, htmlFileName, cssFileName, jsFileName) {
+const zip = new JSZip();
+zip.file(htmlFileName, htmlContent);
+zip.file(cssFileName, cssContent);
+zip.file(jsFileName, jsContent);
+zip.generateAsync({ type: "blob" }).then((content) => {
+const link = document.createElement("a");
+link.href = URL.createObjectURL(content);
+link.download = baseName + ".zip";
 link.click();
 URL.revokeObjectURL(link.href);
+});
+}
+if (codeName.endsWith(".code")) {
+var frame = document.createElement("iframe");
+var style = document.createElement("link");
+var script = document.createElement("script");
+style.rel = "stylesheet";
+style.href = codeName.replaceLastPortion(".code", ".css");
+script.src = codeName.replaceLastPortion(".code", ".js");
+frame.style.display = "none";
+document.body.appendChild(frame);
+frame.srcdoc = html;
+frame.onload = function() {
+var doc = frame.contentDocument;
+doc.head.appendChild(style);
+doc.head.appendChild(script);
+html = doc.documentElement.outerHTML;
+frame.remove();
+mainDownloadZip(codeName.replaceLastPortion(".code", ""), html, css, js, codeName.replaceLastPortion(".code", ".html"), codeName.replaceLastPortion(".code", ".css"), codeName.replaceLastPortion(".code", ".js"));
+}
+}
+else if (codeName.trim() === "") {
+var frame = document.createElement("iframe");
+var style = document.createElement("link");
+var script = document.createElement("script");
+style.rel = "stylesheet";
+style.href = "cssCode.css";
+script.src = "javascriptCode.js";
+frame.style.display = "none";
+document.body.appendChild(frame);
+frame.srcdoc = html;
+frame.onload = function() {
+var doc = frame.contentDocument;
+doc.head.appendChild(style);
+doc.head.appendChild(script);
+html = doc.documentElement.outerHTML;
+frame.remove();
+mainDownloadZip(codeName.replaceLastPortion(".code", ""), html, css, js, "htmlCode.html", "cssCode.css", "javascriptCode.js");
+}
+}
+else {
+var frame = document.createElement("iframe");
+var style = document.createElement("link");
+var script = document.createElement("script");
+style.rel = "stylesheet";
+style.href = codeName + ".css";
+script.src = codeName + ".js";
+frame.style.display = "none";
+document.body.appendChild(frame);
+frame.srcdoc = html;
+frame.onload = function() {
+var doc = frame.contentDocument;
+doc.head.appendChild(style);
+doc.head.appendChild(script);
+html = doc.documentElement.outerHTML;
+frame.remove();
+mainDownloadZip(codeName.replaceLastPortion(".code", ""), html, css, js, codeName + ".html", codeName + ".css", codeName + ".js");
+}
+}
 }
 
 function uploadCode() {
-var codeName = document.getElementById("codeName");
-var code = document.getElementById("code");
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
 var fileInput = document.createElement("input");
-var confirmUploadCode;
+alert("Please make sure you upload exactly 3 files: one HTML, one CSS and one Javascript.");
 fileInput.type = "file";
-fileInput.accept = ".txt, text/html";
+fileInput.accept = ".html,.css,.js,.txt,text/html,text/css,application/javascript";
+fileInput.multiple = true;
 fileInput.click();
-fileInput.onchange = function() {
-if (code.textContent.length > 0) {
-confirmUploadCode = confirm("Are you sure you want to upload this code? Changes may not be saved.");
-if (confirmUploadCode == true) {
-var fileReader = new FileReader();
-fileReader.onload = function() {
-blankCodeWithoutConfirmation();
-codeName.value = fileInput.files[0].name;
-code.innerHTML = fileReader.result.textify();
-syntaxHighlight(code, "html");
+fileInput.onchange = function () {
+if (!this.files.length) {
+return;
+}
+var files = Array.from(this.files);
+if (files.length !== 3) {
+alert("You must select exactly 3 files.");
+return;
+}
+let fileTypes = {
+html: null,
+css: null,
+js: null
+};
+files.forEach(file => {
+const extension = file.name.split(".").pop().toLowerCase();
+if (extension === "html" || extension === "htm") {
+fileTypes.html = file;
+}
+else if (extension === "css") {
+fileTypes.css = file;
+}
+else if (extension === "js") {
+fileTypes.js = file;
+}
+else {
+alert("Only HTML, CSS and Javascript files are allowed.");
+return;
+}
+});
+if (!fileTypes.html || !fileTypes.css || !fileTypes.js) {
+alert("You must select exactly one HTML file, one CSS file, and one JavaScript file.");
+return;
+}
+function loadFile(file, type) {
+var reader = new FileReader();
+reader.onload = function () {
+var content = reader.result.textify();
+if (type === "html") {
+html.innerHTML = content;
+syntaxHighlight(html, "html");
+}
+else if (type === "css") {
+css.innerHTML = content;
+syntaxHighlight(css, "css");
+}
+else if (type === "js") {
+javascript.innerHTML = content;
+syntaxHighlight(javascript, "javascript");
+}
+updateText();
 runCode();
-updateText(code);
 }
-fileReader.readAsText(this.files[0]);
+reader.readAsText(file);
+}
+if (html.textContent.length > 0 || css.textContent.length > 0 || javascript.textContent.length > 0) {
+var confirmUpload = confirm("Are you sure you want to upload this code? Changes may not be saved.");
+if (confirmUpload) {
+loadFile(fileTypes.html, "html");
+loadFile(fileTypes.css, "css");
+loadFile(fileTypes.js, "js");
 }
 }
-else if (code.textContent.length == 0) {
-var fileReader = new FileReader();
-fileReader.onload = function() {
-blankCodeWithoutConfirmation();
-codeName.value = fileInput.files[0].name;
-code.innerHTML = fileReader.result.textify();
-syntaxHighlight(code, "html");
-runCode();
-updateText(code);
-}
-fileReader.readAsText(this.files[0]);
+else {
+loadFile(fileTypes.html, "html");
+loadFile(fileTypes.css, "css");
+loadFile(fileTypes.js, "js");
 }
 }
 }
 
 function blankCode() {
 var codeName = document.getElementById("codeName");
-var code = document.getElementById("code");
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
 var confirmNewCode;
-if (code.textContent.length > 0) {
+if (html.textContent.length > 0 || css.textContent.length > 0 || javascript.textContent.length > 0) {
 confirmNewCode = confirm("Are you sure you want to open a blank code? Changes may not be saved.");
 if (confirmNewCode == true) {
 codeName.value = null;
-code.innerHTML = null;
+html.innerHTML = null;
+css.innerHTML = null;
+javascript.innerHTML = null;
 runCode();
 document.title = defaultTitle;
-updateText(code);
-syntaxHighlight(code, "html");
+updateText();
+syntaxHighlight(html, "html");
+syntaxHighlight(css, "css");
+syntaxHighlight(javascript, "javascript");
 clearDebuggerPanel();
-undoStack = [];
-redoStack = [];
-lastFindOnlyIndex = 0;
-lastFindIndex = 0;
-document.getElementById("findOnlyInput").value = "";
-document.getElementById("findText").value = "";
-document.getElementById("replaceText").value = "";
+htmlUndoStack = [];
+htmlRedoStack = [];
+cssUndoStack = [];
+cssRedoStack = [];
+jsUndoStack = [];
+jsRedoStack = [];
+lastHTMLFindOnlyIndex = 0;
+lastHTMLFindIndex = 0;
+lastCSSFindOnlyIndex = 0;
+lastCSSFindIndex = 0;
+lastJsFindOnlyIndex = 0;
+lastJsFindIndex = 0;
+document.getElementById("htmlFindOnlyInput").value = "";
+document.getElementById("htmlFindText").value = "";
+document.getElementById("htmlReplaceText").value = "";
+document.getElementById("cssFindOnlyInput").value = "";
+document.getElementById("cssFindText").value = "";
+document.getElementById("cssReplaceText").value = "";
+document.getElementById("javascriptFindOnlyInput").value = "";
+document.getElementById("javascriptFindText").value = "";
+document.getElementById("javascriptReplaceText").value = "";
 closeFindReplacePanels();
 }
 }
 else {
 codeName.value = null;
-code.innerHTML = null;
+html.innerHTML = null;
+css.innerHTML = null;
+javascript.innerHTML = null;
 runCode();
 document.title = defaultTitle;
-updateText(code);
-syntaxHighlight(code, "html");
+updateText();
+syntaxHighlight(html, "html");
+syntaxHighlight(css, "css");
+syntaxHighlight(javascript, "javascript");
 clearDebuggerPanel();
-undoStack = [];
-redoStack = [];
-lastFindOnlyIndex = 0;
-lastFindIndex = 0;
-document.getElementById("findOnlyInput").value = "";
-document.getElementById("findText").value = "";
-document.getElementById("replaceText").value = "";
+htmlUndoStack = [];
+htmlRedoStack = [];
+cssUndoStack = [];
+cssRedoStack = [];
+jsUndoStack = [];
+jsRedoStack = [];
+lastHTMLFindOnlyIndex = 0;
+lastHTMLFindIndex = 0;
+lastCSSFindOnlyIndex = 0;
+lastCSSFindIndex = 0;
+lastJsFindOnlyIndex = 0;
+lastJsFindIndex = 0;
+document.getElementById("htmlFindOnlyInput").value = "";
+document.getElementById("htmlFindText").value = "";
+document.getElementById("htmlReplaceText").value = "";
+document.getElementById("cssFindOnlyInput").value = "";
+document.getElementById("cssFindText").value = "";
+document.getElementById("cssReplaceText").value = "";
+document.getElementById("javascriptFindOnlyInput").value = "";
+document.getElementById("javascriptFindText").value = "";
+document.getElementById("javascriptReplaceText").value = "";
 closeFindReplacePanels();
 }
 }
 
 function blankCodeWithoutConfirmation() {
 var codeName = document.getElementById("codeName");
-var code = document.getElementById("code");
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
 codeName.value = null;
-code.innerHTML = null;
+html.innerHTML = null;
+css.innerHTML = null;
+javascript.innerHTML = null;
 runCode();
 document.title = defaultTitle;
-updateText(code);
-syntaxHighlight(code, "html");
+updateText();
+syntaxHighlight(html, "html");
+syntaxHighlight(css, "css");
+syntaxHighlight(javascript, "javascript");
 clearDebuggerPanel();
-undoStack = [];
-redoStack = [];
-lastFindOnlyIndex = 0;
-lastFindIndex = 0;
-document.getElementById("findOnlyInput").value = "";
-document.getElementById("findText").value = "";
-document.getElementById("replaceText").value = "";
+htmlUndoStack = [];
+htmlRedoStack = [];
+cssUndoStack = [];
+cssRedoStack = [];
+jsUndoStack = [];
+jsRedoStack = [];
+lastHTMLFindOnlyIndex = 0;
+lastHTMLFindIndex = 0;
+lastCSSFindOnlyIndex = 0;
+lastCSSFindIndex = 0;
+lastJsFindOnlyIndex = 0;
+lastJsFindIndex = 0;
+document.getElementById("htmlFindOnlyInput").value = "";
+document.getElementById("htmlFindText").value = "";
+document.getElementById("htmlReplaceText").value = "";
+document.getElementById("cssFindOnlyInput").value = "";
+document.getElementById("cssFindText").value = "";
+document.getElementById("cssReplaceText").value = "";
+document.getElementById("javascriptFindOnlyInput").value = "";
+document.getElementById("javascriptFindText").value = "";
+document.getElementById("javascriptReplaceText").value = "";
 closeFindReplacePanels();
 }
 
 function openTutorial() {
 var codeName = document.getElementById("codeName");
-var code = document.getElementById("code");
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
 var confirmOpenTutorial;
 var forLoop = document.getElementById("forLoop");
 var randomNumberShow = document.getElementById("randomNumberShow");
@@ -912,11 +1769,42 @@ var jsCanvas = document.getElementById("jsCanvas");
 var propertyAsAFunctionInJs = document.getElementById("propertyAsAFunctionInJs");
 var jsAlert = document.getElementById("jsAlert");
 var creatingASyntaxHighlighter = document.getElementById("creatingASyntaxHighlighter");
-var forLoopCode = `<!DOCTYPE html>
+var forLoopHTML = `<!DOCTYPE html>
 <html>
-<head>
-<script>
-function showArrayItems() {
+<body>
+<h1>For Loop</h1>
+<p>Click on the "Click me" button to show all the items in an array called "myArray".</p>
+<button onclick="showArrayItems()">Click Me</button>
+<ol id="showItems"></ol>
+</body>
+</html>`;
+var forLoopCSS = `body {
+font-family: Arial, sans-serif;
+text-align: center;
+margin: 0;
+padding: 20px;
+background: #f4f4f4;
+}
+
+button {
+padding: 10px 15px;
+background: #007BFF;
+color: white;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+}
+
+button:hover {
+background: #0056b3;
+}
+
+ol {
+text-align: left;
+padding-left: 20px;
+list-style-type: decimal;
+}`;
+var forLoopJs = `function showArrayItems() {
 var myArray = ["Bugatti", "Koenigsegg Jesko", "McLaren", "Tesla", "Lamborghini", "Ferrari", "Porsche", "Mercedes Benz", "BMW", "Audi", "Pagani", "Maserati"];
 var showItems = document.getElementById("showItems");
 showItems.textContent = "";
@@ -925,32 +1813,9 @@ var li = document.createElement("li");
 li.textContent = myArray[i];
 showItems.appendChild(li);
 }
-}
-</script>
-</head>
-<body>
-<h1>For Loop</h1>
-<p>Click on the "Click me" button to show all the items in an array called "myArray".</p>
-<button onclick="showArrayItems()">Click Me</button>
-<ol id="showItems"></ol>
-</body>
-</html>`;
-var randomNumberShowCode = `<!DOCTYPE html>
+}`
+var randomNumberShowHTML = `<!DOCTYPE html>
 <html>
-<head>
-<script>
-function showRandomNumber() {
-var min = Number(document.getElementById("min").value);
-var max = Number(document.getElementById("max").value);
-if (min < max) {
-document.getElementById("show").textContent = Math.floor(Math.random() * (max - min + 1) + min);
-}
-else {
-document.getElementById("show").textContent = "The minimum value is not lesser than the maximum value. Please try again.";
-}
-}
-</script>
-</head>
 <body>
 <h1>Random Number Show</h1>
 <ul>
@@ -961,38 +1826,90 @@ document.getElementById("show").textContent = "The minimum value is not lesser t
 <p id="show"></p>
 </body>
 </html>`;
-var jsCanvasCode = `<!DOCTYPE html>
-<html>
-<head>
-<script>
-function draw() {
-var ctx = document.getElementById("canvas").getContext("2d");
-ctx.clearRect(0, 0, 200, 200);
-ctx.fillStyle = "green";
-ctx.fillRect(Math.floor(Math.random() * (161 - 40)), Math.floor(Math.random() * (161 - 40)), 40, 40);
+var randomNumberShowCSS = `body {
+font-family: Arial, sans-serif;
+text-align: center;
+padding: 20px;
+background: #f4f4f4;
 }
-</script>
-</head>
+
+input {
+padding: 5px;
+width: 80px;
+}
+
+button {
+padding: 10px;
+background: #007BFF;
+color: white;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+}
+
+button:hover {
+background: #0056b3;
+}
+
+p {
+margin-top: 20px;
+font-size: 1.2rem;
+}
+
+ul {
+text-align: left;
+}`;
+var randomNumberShowJs = `function showRandomNumber() {
+var min = Number(document.getElementById("min").value);
+var max = Number(document.getElementById("max").value);
+if (min < max) {
+document.getElementById("show").textContent = Math.floor(Math.random() * (max - min + 1) + min);
+}
+else {
+document.getElementById("show").textContent = "The minimum value is not lesser than the maximum value. Please try again.";
+}
+}`;
+var jsCanvasHTML = `<!DOCTYPE html>
+<html>
 <body>
 <h1>JS Canvas</h1>
 <button onclick="draw()">Draw on canvas</button><br>
 <canvas id="canvas" height="200" width="200" style="border: 1px solid black;"></canvas>
 </body>
 </html>`;
-var propertyAsAFunctionInJsCode = `<!DOCTYPE html>
+var jsCanvasCSS = `body {
+font-family: Arial, sans-serif;
+text-align: center;
+padding: 20px;
+background: #f4f4f4;
+}
+
+button {
+padding: 10px;
+background: #007BFF;
+color: white;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+margin-bottom: 20px;
+}
+
+button:hover {
+background: #0056b3;
+}
+
+canvas {
+margin-top: 20px;
+border: 1px solid #333;
+}`;
+var jsCanvasJs = `function draw() {
+var ctx = document.getElementById("canvas").getContext("2d");
+ctx.clearRect(0, 0, 200, 200);
+ctx.fillStyle = "green";
+ctx.fillRect(Math.floor(Math.random() * (161 - 40)), Math.floor(Math.random() * (161 - 40)), 40, 40);
+}`;
+var propertyAsAFunctionInJsHTML = `<!DOCTYPE html>
 <html>
-<head>
-<style>
-.colored-text {
-padding: 5px;
-}
-</style>
-<script>
-String.prototype.colored = function(color) {
-return "<span class='colored-text' style='color: " + color + "'>" + this + "</span>";
-}
-</script>
-</head>
 <body>
 <h1>Property As A Function In JS</h1>
 <p>Clicking the "Colour Text" button will call a property function called String.colored().</p>
@@ -1000,46 +1917,118 @@ return "<span class='colored-text' style='color: " + color + "'>" + this + "</sp
 <p id="colorText"></p>
 </body>
 </html>`;
-var jsAlertCode = `<!DOCTYPE html>
-<html>
-<head>
-<script>
-function showMessage(message) {
-alert(message);
+var propertyAsAFunctionInJsCSS = `body {
+font-family: Arial, sans-serif;
+text-align: center;
+padding: 20px;
+background: #f4f4f4;
 }
-</script>
-</head>
+
+button {
+padding: 10px;
+background: #007BFF;
+color: white;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+}
+
+button:hover {
+background: #0056b3;
+}
+
+.colored-text {
+padding: 5px;
+}
+
+p {
+font-size: 1.1rem;
+margin-top: 20px;
+}`;
+var propertyAsAFunctionInJsJs = `String.prototype.colored = function(color) {
+return "<span class='colored-text' style='color: " + color + "'>" + this + "</span>";
+}`;
+var jsAlertHTML = `<!DOCTYPE html>
+<html>
 <body>
 <h1>JS Alert</h1>
 <button onclick="showMessage('Hi! This is an alert box!')">Click me</button>
 </body>
 </html>`;
-var creatingASyntaxHighlighterCode = `<!DOCTYPE html>
+var jsAlertCSS = `body {
+font-family: Arial, sans-serif;
+text-align: center;
+padding: 20px;
+background: #f4f4f4;
+}
+
+button {
+padding: 10px 20px;
+background: #007BFF;
+color: white;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+}
+
+button:hover {
+background: #0056b3;
+}`;
+var jsAlertJs = `function showMessage(message) {
+alert(message);
+}`;
+var creatingASyntaxHighlighterHTML = `<!DOCTYPE html>
 <html>
 <head>
 <link rel="stylesheet" href="https://shemgeorge.github.io/HTMLEditor/appSyntaxHighlighting.css">
 <script src="https://shemgeorge.github.io/HTMLEditor/appSyntaxHighlighting.js"></script>
-<style>
-.code {
-white-space: pre;
-font-family: 'Courier New';
-font-size: 13px;
-line-height: 15.6px;
-width: 600px;
-height: 150px;
-padding: 10px;
-border: 1px solid black;
-overflow-y: auto;
-overflow-x: auto;
+</head>
+<body>
+<h1>Creating A Syntax Highlighter</h1>
+<p>For this, we will be using HTMLEditor's own syntax highlighter.</p>
+Theme: <select id="theme" onchange="changeTheme(); syntaxHighlight(document.getElementById('html'), 'html'); syntaxHighlight(document.getElementById('css'), 'css'); syntaxHighlight(document.getElementById('javascript'), 'javascript');">
+<option value="light">Light Theme</option>
+<option value="dark">Dark Theme</option>
+</select>
+<div class="code-wrapper">
+<div class="line-numbers">
+<ol id="HTMLLineList"></ol>
+</div>
+<div class="code" id="html" oninput="syntaxHighlightContentEditableElement(this, 'html'); updateLineNumbers(this, document.getElementById('HTMLLineList'));" contentEditable="plaintext-only" spellcheck="false" placeholder="HTML"></div>
+</div>
+<div class="code-wrapper">
+<div class="line-numbers">
+<ol id="CSSLineList"></ol>
+</div>
+<div class="code" id="css" oninput="syntaxHighlightContentEditableElement(this, 'css'); updateLineNumbers(this, document.getElementById('CSSLineList'));" contentEditable="plaintext-only" spellcheck="false" placeholder="CSS"></div>
+</div>
+<div class="code-wrapper">
+<div class="line-numbers">
+<ol id="JSLineList"></ol>
+</div>
+<div class="code" id="javascript" oninput="syntaxHighlightContentEditableElement(this, 'javascript'); updateLineNumbers(this, document.getElementById('JSLineList'));" contentEditable="plaintext-only" spellcheck="false" placeholder="Javascript"></div>
+</div>
+</body>
+</html>`;
+var creatingASyntaxHighlighterCSS = `body {
+font-family: Arial, sans-serif;
+text-align: center;
+padding: 20px;
+background: #f4f4f4;
 }
 
-.code:focus {
-outline: 0px solid transparent;
+button {
+padding: 10px 20px;
+background: #007BFF;
+color: white;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+margin-bottom: 20px;
 }
 
-.code:empty:before {
-content: attr(placeholder);
-color: grey;
+button:hover {
+background: #0056b3;
 }
 
 .code-wrapper {
@@ -1049,6 +2038,7 @@ height: 172px;
 border: 1px solid #ccc;
 background: white;
 box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+margin: 20px auto;
 }
 
 .line-numbers {
@@ -1073,9 +2063,30 @@ margin: 0;
 .line-numbers li {
 padding-right: 5px;
 }
-</style>
-<script>
-window.onload = function() {
+
+.code {
+text-align: left;
+white-space: pre;
+font-family: 'Courier New';
+font-size: 13px;
+line-height: 15.6px;
+width: 600px;
+height: 150px;
+padding: 10px;
+border: 1px solid black;
+overflow-y: auto;
+overflow-x: auto;
+}
+
+.code:focus {
+outline: 0px solid transparent;
+}
+
+.code:empty:before {
+content: attr(placeholder);
+color: grey;
+}`;
+var creatingASyntaxHighlighterJs = `window.onload = function() {
 updateLineNumbers(document.getElementById("html"), document.getElementById("HTMLLineList"));
 updateLineNumbers(document.getElementById("css"), document.getElementById("CSSLineList"));
 updateLineNumbers(document.getElementById("javascript"), document.getElementById("JSLineList"));
@@ -1108,110 +2119,109 @@ document.getElementById("html").style.color = "white";
 document.getElementById("css").style.color = "white";
 document.getElementById("javascript").style.color = "white";
 }
-}
-</script>
-</head>
-<body>
-<h1>Creating A Syntax Highlighter</h1>
-<p>For this, we will be using HTMLEditor's own syntax highlighter.</p>
-Theme: <select id="theme" onchange="changeTheme(); syntaxHighlight(document.getElementById('html'), 'html'); syntaxHighlight(document.getElementById('css'), 'css'); syntaxHighlight(document.getElementById('javascript'), 'javascript');">
-<option value="light">Light Theme</option>
-<option value="dark">Dark Theme</option>
-</select>
-<div class="code-wrapper">
-<div class="line-numbers">
-<ol id="HTMLLineList"></ol>
-</div>
-<div class="code" id="html" oninput="syntaxHighlightContentEditableElement(this, 'html'); updateLineNumbers(this, document.getElementById('HTMLLineList'));" contentEditable="plaintext-only" spellcheck="false" placeholder="HTML"></div>
-</div>
-<div class="code-wrapper">
-<div class="line-numbers">
-<ol id="CSSLineList"></ol>
-</div>
-<div class="code" id="css" oninput="syntaxHighlightContentEditableElement(this, 'css'); updateLineNumbers(this, document.getElementById('CSSLineList'));" contentEditable="plaintext-only" spellcheck="false" placeholder="CSS"></div>
-</div>
-<div class="code-wrapper">
-<div class="line-numbers">
-<ol id="JSLineList"></ol>
-</div>
-<div class="code" id="javascript" oninput="syntaxHighlightContentEditableElement(this, 'javascript'); updateLineNumbers(this, document.getElementById('JSLineList'));" contentEditable="plaintext-only" spellcheck="false" placeholder="Javascript"></div>
-</div>
-</body>
-</html>`;
-if (code.textContent.length > 0) {
+}`;
+if (html.textContent.length > 0 || css.textContent > 0 || javascript.textContent > 0) {
 confirmOpenTutorial = confirm("Are you sure you want to open this tutorial? Changes may not be saved.");
 if (confirmOpenTutorial == true) {
 blankCodeWithoutConfirmation();
 if (forLoop.selected == true) {
-code.textContent = forLoopCode;
+html.textContent = forLoopHTML;
+css.textContent = forLoopCSS;
+javascript.textContent = forLoopJs;
 codeName.value = "For Loop (Tutorial)";
 document.title = "For Loop (Tutorial) - " + defaultTitle;
 }
-if (randomNumberShow.selected == true) {
-code.textContent = randomNumberShowCode;
+else if (randomNumberShow.selected == true) {
+html.textContent = randomNumberShowHTML;
+css.textContent = randomNumberShowCSS;
+javascript.textContent = randomNumberShowJs;
 codeName.value = "Random Number Show (Tutorial)";
 document.title = "Random Number Show (Tutorial) - " + defaultTitle;
 }
-if (jsCanvas.selected == true) {
-code.textContent = jsCanvasCode;
+else if (jsCanvas.selected == true) {
+html.textContent = jsCanvasHTML;
+css.textContent = jsCanvasCSS;
+javascript.textContent = jsCanvasJs;
 codeName.value = "JS Canvas (Tutorial)";
 document.title = "JS Canvas (Tutorial) - " + defaultTitle;
 }
-if (propertyAsAFunctionInJs.selected == true) {
-code.textContent = propertyAsAFunctionInJsCode;
+else if (propertyAsAFunctionInJs.selected == true) {
+html.textContent = propertyAsAFunctionInJsHTML;
+css.textContent = propertyAsAFunctionInJsCSS;
+javascript.textContent = propertyAsAFunctionInJsJs;
 codeName.value = "Property As A Function In JS (Tutorial)";
 document.title = "Property As A Function In JS (Tutorial) - " + defaultTitle;
 }
-if (jsAlert.selected == true) {
-code.textContent = jsAlertCode;
+else if (jsAlert.selected == true) {
+html.textContent = jsAlertHTML;
+css.textContent = jsAlertCSS;
+javascript.textContent = jsAlertJs;
 codeName.value = "JS Alert (Tutorial)";
 document.title = "JS Alert (Tutorial) - " + defaultTitle;
 }
-if(creatingASyntaxHighlighter.selected == true) {
-code.textContent = creatingASyntaxHighlighterCode;
+else if (creatingASyntaxHighlighter.selected == true) {
+html.textContent = creatingASyntaxHighlighterHTML;
+css.textContent = creatingASyntaxHighlighterCSS;
+javascript.textContent = creatingASyntaxHighlighterJs;
 codeName.value = "Creating A Syntax Highlighter (Tutorial)";
 document.title = "Creating A Syntax Highlighter (Tutorial) - " + defaultTitle;
 }
-syntaxHighlight(code, "html");
+syntaxHighlight(html, "html");
+syntaxHighlight(css, "css");
+syntaxHighlight(javascript, "javascript");
 runCode();
-updateText(code);
+updateText();
 }
 }
-else if (code.textContent.length == 0) {
+else {
 blankCodeWithoutConfirmation();
 if (forLoop.selected == true) {
-code.textContent = forLoopCode;
+html.textContent = forLoopHTML;
+css.textContent = forLoopCSS;
+javascript.textContent = forLoopJs;
 codeName.value = "For Loop (Tutorial)";
 document.title = "For Loop (Tutorial) - " + defaultTitle;
 }
-if (randomNumberShow.selected == true) {
-code.textContent = randomNumberShowCode;
+else if (randomNumberShow.selected == true) {
+html.textContent = randomNumberShowHTML;
+css.textContent = randomNumberShowCSS;
+javascript.textContent = randomNumberShowJs;
 codeName.value = "Random Number Show (Tutorial)";
 document.title = "Random Number Show (Tutorial) - " + defaultTitle;
 }
-if (jsCanvas.selected == true) {
-code.textContent = jsCanvasCode;
+else if (jsCanvas.selected == true) {
+html.textContent = jsCanvasHTML;
+css.textContent = jsCanvasCSS;
+javascript.textContent = jsCanvasJs;
 codeName.value = "JS Canvas (Tutorial)";
-document.title = "JS Canvas (Tutorial)";
+document.title = "JS Canvas (Tutorial) - " + defaultTitle;
 }
-if (propertyAsAFunctionInJs.selected == true) {
-code.textContent = propertyAsAFunctionInJsCode;
+else if (propertyAsAFunctionInJs.selected == true) {
+html.textContent = propertyAsAFunctionInJsHTML;
+css.textContent = propertyAsAFunctionInJsCSS;
+javascript.textContent = propertyAsAFunctionInJsJs;
 codeName.value = "Property As A Function In JS (Tutorial)";
 document.title = "Property As A Function In JS (Tutorial) - " + defaultTitle;
 }
-if (jsAlert.selected == true) {
-code.textContent = jsAlertCode;
+else if (jsAlert.selected == true) {
+html.textContent = jsAlertHTML;
+css.textContent = jsAlertCSS;
+javascript.textContent = jsAlertJs;
 codeName.value = "JS Alert (Tutorial)";
 document.title = "JS Alert (Tutorial) - " + defaultTitle;
 }
-if(creatingASyntaxHighlighter.selected == true) {
-code.textContent = creatingASyntaxHighlighterCode;
+else if (creatingASyntaxHighlighter.selected == true) {
+html.textContent = creatingASyntaxHighlighterHTML;
+css.textContent = creatingASyntaxHighlighterCSS;
+javascript.textContent = creatingASyntaxHighlighterJs;
 codeName.value = "Creating A Syntax Highlighter (Tutorial)";
 document.title = "Creating A Syntax Highlighter (Tutorial) - " + defaultTitle;
 }
-syntaxHighlight(code, "html");
+syntaxHighlight(html, "html");
+syntaxHighlight(css, "css");
+syntaxHighlight(javascript, "javascript");
 runCode();
-updateText(code);
+updateText();
 }
 }
 
@@ -1232,8 +2242,11 @@ showCodes();
 }
 }
 
-function updateText(element) {
-if (element.textContent.length > 0) {
+function updateText() {
+var html = document.getElementById("html");
+var css = document.getElementById("css");
+var javascript = document.getElementById("javascript");
+if (html.textContent.length > 0 || css.textContent.length > 0 || javascript.textContent.length > 0) {
 window.onbeforeunload = function(e) {
 return "";
 }
