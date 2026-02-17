@@ -7,6 +7,7 @@
 <link rel="icon" href="HTMLEditorApp.ico">
 <link rel="stylesheet" href="HTMLEditorApp.css">
 <link rel="stylesheet" href="appSyntaxHighlighting.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="HTMLEditorApp.js"></script>
 <script src="appSyntaxHighlighting.js"></script>
 </head>
@@ -21,11 +22,12 @@ background: #264f78;
 <h1>HTMLEditor</h1>
 <ul style="font-size: 12px;">
 <li>To open <b>"Find"</b> panel, click inside the code-box and press Ctrl + F.</li><br>
-<li>To open <b>"Find and Replace"</b> panel, click inside the code-box and press Ctrl + H.</li>
+<li>To open <b>"Find and Replace"</b> panel, click inside the code-box and press Ctrl + H.</li><br>
+<li style="color: red;">After downloading a code, please <u><b>unblock</b></u> the downloaded zip file and <u><b>extract</b></u> its contents before use.</li>
 </ul>
 <br>
 <label>Theme:</label>
-<select id="theme" onchange="syntaxHighlight(document.getElementById('code'), 'html'); storeTheme();">
+<select id="theme" onchange="syntaxHighlight(document.getElementById('html'), 'html'); syntaxHighlight(document.getElementById('css'), 'css'); syntaxHighlight(document.getElementById('javascript'), 'javascript'); storeTheme();">
 <option value="dark">Dark Theme</option>
 <option value="light">Light Theme</option>
 </select>		
@@ -48,35 +50,63 @@ Tutorials: <select name="tutorials" id="tutorials">
 <section id="editorPane">
 <div id="topControls">
 Code Name: <input type="text" autocomplete="off" id="codeName" placeholder="Code Name" spellcheck="false">
-<div id="findBox" style="display: none; float: right;">
-<input id="findOnlyInput" placeholder="Find..." autocomplete="off">
-<button onclick="findNextOnly()">Find Next</button>
+<div id="htmlFindBox" style="display: none; float: right;">
+<input id="htmlFindOnlyInput" placeholder="Find..." autocomplete="off">
+<button onclick="htmlFindNextOnly()">Find Next</button>
 </div>
-<div id="findReplaceBox" style="display: none; float: right;">
-<input id="findText" placeholder="Find..." autocomplete="off">
-<input id="replaceText" placeholder="Replace..." autocomplete="off">
-<button onclick="findNext()">Find Next</button>
-<button onclick="replaceOne()">Replace</button>
-<button onclick="replaceAll()">Replace All</button>
+<div id="htmlFindReplaceBox" style="display: none; float: right;">
+<input id="htmlFindText" placeholder="Find..." autocomplete="off">
+<input id="htmlReplaceText" placeholder="Replace..." autocomplete="off">
+<button onclick="htmlFindNext()">Find Next</button>
+<button onclick="htmlReplaceOne()">Replace</button>
+<button onclick="htmlReplaceAll()">Replace All</button>
+</div>
+<div id="cssFindBox" style="display: none; float: right;">
+<input id="cssFindOnlyInput" placeholder="Find..." autocomplete="off">
+<button onclick="cssFindNextOnly()">Find Next</button>
+</div>
+<div id="cssFindReplaceBox" style="display: none; float: right;">
+<input id="cssFindText" placeholder="Find..." autocomplete="off">
+<input id="cssReplaceText" placeholder="Replace..." autocomplete="off">
+<button onclick="cssFindNext()">Find Next</button>
+<button onclick="cssReplaceOne()">Replace</button>
+<button onclick="cssReplaceAll()">Replace All</button>
+</div>
+<div id="javascriptFindBox" style="display: none; float: right;">
+<input id="javascriptFindOnlyInput" placeholder="Find..." autocomplete="off">
+<button onclick="javascriptFindNextOnly()">Find Next</button>
+</div>
+<div id="javascriptFindReplaceBox" style="display: none; float: right;">
+<input id="javascriptFindText" placeholder="Find..." autocomplete="off">
+<input id="javascriptReplaceText" placeholder="Replace..." autocomplete="off">
+<button onclick="javascriptFindNext()">Find Next</button>
+<button onclick="javascriptReplaceOne()">Replace</button>
+<button onclick="javascriptReplaceAll()">Replace All</button>
 </div>
 <span id="findReplaceCloseInfo" style="display: none; float: right; font-size: 12px;">Press Alt + Shift + J to close this👆</span>
 <div id="buttonRow">
 <button onclick="runCode()" title="Alt + Shift + Enter">Run Code</button>
 <button onclick="saveCode()" title="Alt + Shift + S">Save Code</button>
 <button onclick="blankCode()" title="Alt + Shift + B">Blank Code</button>
-<button onclick="downloadCode(document.getElementById('codeName').value.replaceLastPortion('.code', '') + '.html', document.getElementById('code').textContent, 'html/plain')"  title="Alt + Shift + D">Download Code</button>
+<button onclick="downloadCode(document.getElementById('codeName').value, document.getElementById('html').textContent, document.getElementById('css').textContent, document.getElementById('javascript').textContent)"  title="Alt + Shift + D">Download Code</button>
 <button onclick="uploadCode()"  title="Alt + Shift + U">Upload Code</button>
 </div>
 </div>
 <div id="codeWrapper" class="code-wrapper">
-<div class="line-numbers"><ol id="lineList"></ol></div>
-<div id="code" oninput="syntaxHighlightContentEditableElement(this, 'html'); updateText(this); updateLineNumbers(this, document.getElementById('lineList'));" 
-contentEditable="plaintext-only" spellcheck="false" placeholder="Type your code here..."></div>
+<div class="html-line-numbers"><ol id="htmlLineList"></ol></div>
+<div class="code" id="html" oninput="syntaxHighlightContentEditableElement(this, 'html'); updateText(); updateLineNumbers(this, document.getElementById('htmlLineList'));" 
+contentEditable="plaintext-only" spellcheck="false" placeholder="HTML"></div>
+<div class="css-line-numbers"><ol id="cssLineList"></ol></div>
+<div class="code" id="css" oninput="syntaxHighlightContentEditableElement(this, 'css'); updateText(); updateLineNumbers(this, document.getElementById('cssLineList'));" 
+contentEditable="plaintext-only" spellcheck="false" placeholder="CSS"></div>
+<div class="javascript-line-numbers"><ol id="javascriptLineList"></ol></div>
+<div class="code" id="javascript" oninput="syntaxHighlightContentEditableElement(this, 'javascript'); updateText(); updateLineNumbers(this, document.getElementById('javascriptLineList'));" 
+contentEditable="plaintext-only" spellcheck="false" placeholder="Javascript"></div>
 </div>
 </section>
 <section id="previewPane">
 <div id="frameContainer" style="position: relative;">
-<iframe id="result" sandbox="allow-scripts allow-modals" tabindex="0"></iframe>
+<iframe id="result" sandbox="allow-scripts allow-modals allow-popups allow-forms" tabindex="0"></iframe>
 <button id="fullScreenButton" onclick="frameFullScreen()">⛶</button>
 </div>
 </section>
@@ -89,7 +119,9 @@ contentEditable="plaintext-only" spellcheck="false" placeholder="Type your code 
 </div>
 <div id="debuggerPanelHolder">
 <div id="debuggerPanel"></div>
-<div id="fixedCode"></div>
+<div id="fixedHTML"></div>
+<div id="fixedCSS"></div>
+<div id="fixedJavascript"></div>
 </div>
 </section>
 </main>
@@ -99,7 +131,9 @@ contentEditable="plaintext-only" spellcheck="false" placeholder="Type your code 
 <div id="del">Delete code</div>
 <div id="download">Download code</div>
 <div id="copyCodeName">Copy code name</div>
-<div id="copyCode">Copy code</div>
+<div id="copyHTML">Copy HTML</div>
+<div id="copyCSS">Copy CSS</div>
+<div id="copyJavascript">Copy Javascript</div>
 </div>
 </body>
 </html>
