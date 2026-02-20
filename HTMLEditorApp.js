@@ -1330,7 +1330,7 @@ var jsCode = document.getElementById("javascript").innerText.trim();
 var debuggerPanel = document.getElementById("debuggerPanel");
 var fixedHTML = document.getElementById("fixedHTML");
 var fixedCSS = document.getElementById("fixedCSS");
-var fixedJs = document.getElementById("fixedJavascript");
+var fixedJavascript = document.getElementById("fixedJavascript");
 debuggerPanel.innerHTML = "Please wait while we process your code...";
 fixedHTML.textContent = "";
 fixedCSS.textContent = "";
@@ -1346,7 +1346,7 @@ javascript: jsCode,
 }),
 });
 if (!res.ok) {
-debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}: ${res.statusText}</div>`;
+debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}</div>`;
 return;
 }
 const data = await res.json();
