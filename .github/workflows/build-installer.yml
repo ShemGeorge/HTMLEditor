@@ -16,10 +16,11 @@ jobs:
           node-version: '20'
       - run: npm install
       - run: npm run dist -- --publish never
-      - name: Create .zip for Windows
+      - name: Create .zip for Windows using PowerShell
+        shell: pwsh
         run: |
           cd dist
-          zip -r HTMLEditor-Windows.zip *.exe  # Zip only .exe files
+          Compress-Archive -Path *.exe -DestinationPath HTMLEditor-Windows.zip
       - uses: actions/upload-artifact@v4
         with:
           name: HTMLEditor-Windows
