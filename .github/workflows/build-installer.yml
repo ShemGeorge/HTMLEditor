@@ -19,7 +19,7 @@ jobs:
       - name: Create .zip for Windows
         run: |
           cd dist
-          zip -r HTMLEditor-Windows.zip *.exe
+          zip -r HTMLEditor-Windows.zip *.exe  # Zip only .exe files
       - uses: actions/upload-artifact@v4
         with:
           name: HTMLEditor-Windows
@@ -37,7 +37,7 @@ jobs:
       - name: Create .zip for macOS
         run: |
           cd dist
-          zip -r HTMLEditor-Mac.zip *.dmg
+          zip -r HTMLEditor-Mac.zip *.dmg  # Zip only .dmg files
       - uses: actions/upload-artifact@v4
         with:
           name: HTMLEditor-Mac
@@ -55,7 +55,7 @@ jobs:
       - name: Create .zip for Linux
         run: |
           cd dist
-          zip -r HTMLEditor-Linux.zip *.AppImage *.deb
+          zip -r HTMLEditor-Linux.zip *.AppImage *.deb  # Zip both .AppImage and .deb files
       - uses: actions/upload-artifact@v4
         with:
           name: HTMLEditor-Linux
