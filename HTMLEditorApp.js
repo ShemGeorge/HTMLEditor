@@ -444,26 +444,26 @@ document.getElementById("findReplaceCloseInfo").style.display = "none";
 }
 
 function getCaretIndex(element) {
-const sel = window.getSelection();
+var sel = window.getSelection();
 if (!sel.rangeCount) return null;
-const range = sel.getRangeAt(0);
+var range = sel.getRangeAt(0);
 if (!element.contains(range.startContainer)) return null;
-const preRange = document.createRange();
+var preRange = document.createRange();
 preRange.selectNodeContents(element);
 preRange.setEnd(range.startContainer, range.startOffset);
 return preRange.toString().length;
 }
 
 function highlightRange(element, start, end) {
-const sel = window.getSelection();
-const range = document.createRange();
-const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+var sel = window.getSelection();
+var range = document.createRange();
+var walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
 var node, index = 0;
 while ((node = walker.nextNode())) {
-const len = node.textContent.length;
+var len = node.textContent.length;
 if (start < index + len) {
-const startOffset = Math.max(0, start - index);
-const endOffset = Math.min(len, end - index);
+var startOffset = Math.max(0, start - index);
+var endOffset = Math.min(len, end - index);
 range.setStart(node, startOffset);
 range.setEnd(node, endOffset);
 sel.removeAllRanges();
@@ -476,38 +476,38 @@ index += len;
 }
 
 function scrollSelectionIntoView(code) {
-const sel = window.getSelection();
+var sel = window.getSelection();
 if (!sel.rangeCount) {
 return;
 }
-const range = sel.getRangeAt(0).cloneRange();
+var range = sel.getRangeAt(0).cloneRange();
 range.collapse(true);
-const rect = range.getBoundingClientRect();
-const containerRect = code.getBoundingClientRect();
-const offsetTop = rect.top - containerRect.top;
+var rect = range.getBoundingClientRect();
+var containerRect = code.getBoundingClientRect();
+var offsetTop = rect.top - containerRect.top;
 code.scrollTop += offsetTop - code.clientHeight / 2 + rect.height / 2;
-const offsetLeft = rect.left - containerRect.left;
+var offsetLeft = rect.left - containerRect.left;
 code.scrollLeft += offsetLeft - code.clientWidth / 2 + rect.width / 2;
 }
 
 function htmlFindNextOnly() {
-const html = document.getElementById("html");
-const findVal = document.getElementById("htmlFindOnlyInput").value;
+var html = document.getElementById("html");
+var findVal = document.getElementById("htmlFindOnlyInput").value;
 if (!findVal) {
 return;
 }
-const text = html.textContent;
+var text = html.textContent;
 var startIndex = lastHTMLFindOnlyIndex;
-const sel = window.getSelection();
+var sel = window.getSelection();
 if (sel.rangeCount > 0 && sel.toString().length > 0) {
-const range = sel.getRangeAt(0);
-const preRange = document.createRange();
+var range = sel.getRangeAt(0);
+var preRange = document.createRange();
 preRange.selectNodeContents(html);
 preRange.setEnd(range.endContainer, range.endOffset);
 startIndex = preRange.toString().length;
 }
 else {
-const caretIndex = getCaretIndex(html);
+var caretIndex = getCaretIndex(html);
 if (caretIndex !== null) startIndex = caretIndex;
 }
 var index = text.indexOf(findVal, startIndex);
@@ -524,23 +524,23 @@ scrollSelectionIntoView(html);
 }
 
 function cssFindNextOnly() {
-const css = document.getElementById("css");
-const findVal = document.getElementById("cssFindOnlyInput").value;
+var css = document.getElementById("css");
+var findVal = document.getElementById("cssFindOnlyInput").value;
 if (!findVal) {
 return;
 }
-const text = css.textContent;
+var text = css.textContent;
 var startIndex = lastCSSFindOnlyIndex;
-const sel = window.getSelection();
+var sel = window.getSelection();
 if (sel.rangeCount > 0 && sel.toString().length > 0) {
-const range = sel.getRangeAt(0);
-const preRange = document.createRange();
+var range = sel.getRangeAt(0);
+var preRange = document.createRange();
 preRange.selectNodeContents(css);
 preRange.setEnd(range.endContainer, range.endOffset);
 startIndex = preRange.toString().length;
 }
 else {
-const caretIndex = getCaretIndex(css);
+var caretIndex = getCaretIndex(css);
 if (caretIndex !== null) startIndex = caretIndex;
 }
 var index = text.indexOf(findVal, startIndex);
@@ -557,23 +557,23 @@ scrollSelectionIntoView(css);
 }
 
 function javascriptFindNextOnly() {
-const javascript = document.getElementById("javascript");
-const findVal = document.getElementById("javascriptFindOnlyInput").value;
+var javascript = document.getElementById("javascript");
+var findVal = document.getElementById("javascriptFindOnlyInput").value;
 if (!findVal) {
 return;
 }
-const text = javascript.textContent;
+var text = javascript.textContent;
 var startIndex = lastJsFindOnlyIndex;
-const sel = window.getSelection();
+var sel = window.getSelection();
 if (sel.rangeCount > 0 && sel.toString().length > 0) {
-const range = sel.getRangeAt(0);
-const preRange = document.createRange();
+var range = sel.getRangeAt(0);
+var preRange = document.createRange();
 preRange.selectNodeContents(javascript);
 preRange.setEnd(range.endContainer, range.endOffset);
 startIndex = preRange.toString().length;
 }
 else {
-const caretIndex = getCaretIndex(javascript);
+var caretIndex = getCaretIndex(javascript);
 if (caretIndex !== null) startIndex = caretIndex;
 }
 var index = text.indexOf(findVal, startIndex);
@@ -590,23 +590,23 @@ scrollSelectionIntoView(javascript);
 }
 
 function htmlFindNext() {
-const html = document.getElementById("html");
-const findVal = document.getElementById("htmlFindText").value;
+var html = document.getElementById("html");
+var findVal = document.getElementById("htmlFindText").value;
 if (!findVal) {
 return;
 }
-const text = html.textContent;
+var text = html.textContent;
 var startIndex = lastHTMLFindIndex;
-const sel = window.getSelection();
+var sel = window.getSelection();
 if (sel.rangeCount > 0 && sel.toString().length > 0) {
-const range = sel.getRangeAt(0);
-const preRange = document.createRange();
+var range = sel.getRangeAt(0);
+var preRange = document.createRange();
 preRange.selectNodeContents(html);
 preRange.setEnd(range.endContainer, range.endOffset);
 startIndex = preRange.toString().length;
 }
 else {
-const caretIndex = getCaretIndex(html);
+var caretIndex = getCaretIndex(html);
 if (caretIndex !== null) startIndex = caretIndex;
 }
 var index = text.indexOf(findVal, startIndex);
@@ -623,23 +623,23 @@ scrollSelectionIntoView(html);
 }
 
 function cssFindNext() {
-const css = document.getElementById("css");
-const findVal = document.getElementById("cssFindText").value;
+var css = document.getElementById("css");
+var findVal = document.getElementById("cssFindText").value;
 if (!findVal) {
 return;
 }
-const text = css.textContent;
+var text = css.textContent;
 var startIndex = lastCSSFindIndex;
-const sel = window.getSelection();
+var sel = window.getSelection();
 if (sel.rangeCount > 0 && sel.toString().length > 0) {
-const range = sel.getRangeAt(0);
-const preRange = document.createRange();
+var range = sel.getRangeAt(0);
+var preRange = document.createRange();
 preRange.selectNodeContents(css);
 preRange.setEnd(range.endContainer, range.endOffset);
 startIndex = preRange.toString().length;
 }
 else {
-const caretIndex = getCaretIndex(css);
+var caretIndex = getCaretIndex(css);
 if (caretIndex !== null) startIndex = caretIndex;
 }
 var index = text.indexOf(findVal, startIndex);
@@ -656,23 +656,23 @@ scrollSelectionIntoView(css);
 }
 
 function javascriptFindNext() {
-const javascript = document.getElementById("javascript");
-const findVal = document.getElementById("javascriptFindText").value;
+var javascript = document.getElementById("javascript");
+var findVal = document.getElementById("javascriptFindText").value;
 if (!findVal) {
 return;
 }
-const text = javascript.textContent;
+var text = javascript.textContent;
 var startIndex = lastJsFindIndex;
-const sel = window.getSelection();
+var sel = window.getSelection();
 if (sel.rangeCount > 0 && sel.toString().length > 0) {
-const range = sel.getRangeAt(0);
-const preRange = document.createRange();
+var range = sel.getRangeAt(0);
+var preRange = document.createRange();
 preRange.selectNodeContents(javascript);
 preRange.setEnd(range.endContainer, range.endOffset);
 startIndex = preRange.toString().length;
 }
 else {
-const caretIndex = getCaretIndex(javascript);
+var caretIndex = getCaretIndex(javascript);
 if (caretIndex !== null) startIndex = caretIndex;
 }
 var index = text.indexOf(findVal, startIndex);
@@ -689,16 +689,16 @@ scrollSelectionIntoView(javascript);
 }
 
 function htmlReplaceOne() {
-const html = document.getElementById("html");
-const findVal = document.getElementById("htmlFindText").value;
-const replaceVal = document.getElementById("htmlReplaceText").value;
+var html = document.getElementById("html");
+var findVal = document.getElementById("htmlFindText").value;
+var replaceVal = document.getElementById("htmlReplaceText").value;
 if (!findVal) {
 return;
 }
 saveHTMLCodeSnapshot();
-const text = html.textContent;
+var text = html.textContent;
 var startIndex = lastHTMLFindIndex;
-const caretIndex = getCaretIndex(html);
+var caretIndex = getCaretIndex(html);
 if (caretIndex !== null) startIndex = caretIndex;
 var index = text.indexOf(findVal, startIndex);
 if (index === -1) {
@@ -711,14 +711,14 @@ return;
 html.textContent = text.slice(0, index) + replaceVal + text.slice(index + findVal.length);
 syntaxHighlightContentEditableElement(html, "html");
 html.focus();
-const sel = window.getSelection();
-const range = document.createRange();
+var sel = window.getSelection();
+var range = document.createRange();
 var charIndex = 0;
 var endNode = null;
-const walker = document.createTreeWalker(html, NodeFilter.SHOW_TEXT);
+var walker = document.createTreeWalker(html, NodeFilter.SHOW_TEXT);
 while (walker.nextNode()) {
-const node = walker.currentNode;
-const nextIndex = charIndex + node.textContent.length;
+var node = walker.currentNode;
+var nextIndex = charIndex + node.textContent.length;
 if (!endNode && index + replaceVal.length <= nextIndex) {
 endNode = node;
 range.setStart(node, index + replaceVal.length - charIndex);
@@ -736,16 +736,16 @@ lastHTMLFindIndex = index + replaceVal.length;
 }
 
 function cssReplaceOne() {
-const css = document.getElementById("css");
-const findVal = document.getElementById("cssFindText").value;
-const replaceVal = document.getElementById("cssReplaceText").value;
+var css = document.getElementById("css");
+var findVal = document.getElementById("cssFindText").value;
+var replaceVal = document.getElementById("cssReplaceText").value;
 if (!findVal) {
 return;
 }
 saveCSSCodeSnapshot();
-const text = css.textContent;
+var text = css.textContent;
 var startIndex = lastCSSFindIndex;
-const caretIndex = getCaretIndex(css);
+var caretIndex = getCaretIndex(css);
 if (caretIndex !== null) startIndex = caretIndex;
 var index = text.indexOf(findVal, startIndex);
 if (index === -1) {
@@ -758,14 +758,14 @@ return;
 css.textContent = text.slice(0, index) + replaceVal + text.slice(index + findVal.length);
 syntaxHighlightContentEditableElement(css, "css");
 css.focus();
-const sel = window.getSelection();
-const range = document.createRange();
+var sel = window.getSelection();
+var range = document.createRange();
 var charIndex = 0;
 var endNode = null;
-const walker = document.createTreeWalker(css, NodeFilter.SHOW_TEXT);
+var walker = document.createTreeWalker(css, NodeFilter.SHOW_TEXT);
 while (walker.nextNode()) {
-const node = walker.currentNode;
-const nextIndex = charIndex + node.textContent.length;
+var node = walker.currentNode;
+var nextIndex = charIndex + node.textContent.length;
 if (!endNode && index + replaceVal.length <= nextIndex) {
 endNode = node;
 range.setStart(node, index + replaceVal.length - charIndex);
@@ -783,16 +783,16 @@ lastCSSFindIndex = index + replaceVal.length;
 }
 
 function javascriptReplaceOne() {
-const javascript = document.getElementById("javascript");
-const findVal = document.getElementById("javascriptFindText").value;
-const replaceVal = document.getElementById("javascriptReplaceText").value;
+var javascript = document.getElementById("javascript");
+var findVal = document.getElementById("javascriptFindText").value;
+var replaceVal = document.getElementById("javascriptReplaceText").value;
 if (!findVal) {
 return;
 }
 saveJsCodeSnapshot();
-const text = javascript.textContent;
+var text = javascript.textContent;
 var startIndex = lastJsFindIndex;
-const caretIndex = getCaretIndex(javascript);
+var caretIndex = getCaretIndex(javascript);
 if (caretIndex !== null) startIndex = caretIndex;
 var index = text.indexOf(findVal, startIndex);
 if (index === -1) {
@@ -805,14 +805,14 @@ return;
 javascript.textContent = text.slice(0, index) + replaceVal + text.slice(index + findVal.length);
 syntaxHighlightContentEditableElement(javascript, "javascript");
 javascript.focus();
-const sel = window.getSelection();
-const range = document.createRange();
+var sel = window.getSelection();
+var range = document.createRange();
 var charIndex = 0;
 var endNode = null;
-const walker = document.createTreeWalker(javascript, NodeFilter.SHOW_TEXT);
+var walker = document.createTreeWalker(javascript, NodeFilter.SHOW_TEXT);
 while (walker.nextNode()) {
-const node = walker.currentNode;
-const nextIndex = charIndex + node.textContent.length;
+var node = walker.currentNode;
+var nextIndex = charIndex + node.textContent.length;
 if (!endNode && index + replaceVal.length <= nextIndex) {
 endNode = node;
 range.setStart(node, index + replaceVal.length - charIndex);
@@ -830,9 +830,9 @@ lastJsFindIndex = index + replaceVal.length;
 }
 
 function htmlReplaceAll() {
-const html = document.getElementById("html");
-const findVal = document.getElementById("htmlFindText").value;
-const replaceVal = document.getElementById("htmlReplaceText").value;
+var html = document.getElementById("html");
+var findVal = document.getElementById("htmlFindText").value;
+var replaceVal = document.getElementById("htmlReplaceText").value;
 if (!findVal) {
 return;
 }
@@ -846,9 +846,9 @@ alert("All occurrences replaced.");
 }
 
 function cssReplaceAll() {
-const css = document.getElementById("css");
-const findVal = document.getElementById("cssFindText").value;
-const replaceVal = document.getElementById("cssReplaceText").value;
+var css = document.getElementById("css");
+var findVal = document.getElementById("cssFindText").value;
+var replaceVal = document.getElementById("cssReplaceText").value;
 if (!findVal) {
 return;
 }
@@ -862,9 +862,9 @@ alert("All occurrences replaced.");
 }
 
 function javascriptReplaceAll() {
-const javascript = document.getElementById("javascript");
-const findVal = document.getElementById("javascriptFindText").value;
-const replaceVal = document.getElementById("javascriptReplaceText").value;
+var javascript = document.getElementById("javascript");
+var findVal = document.getElementById("javascriptFindText").value;
+var replaceVal = document.getElementById("javascriptReplaceText").value;
 if (!findVal) {
 return;
 }
@@ -878,16 +878,16 @@ alert("All occurrences replaced.");
 }
 
 function saveHTMLCodeSnapshot() {
-const html = document.getElementById("html");
-const sel = window.getSelection();
+var html = document.getElementById("html");
+var sel = window.getSelection();
 var range = null;
 if (sel.rangeCount > 0) {
-const r = sel.getRangeAt(0);
+var r = sel.getRangeAt(0);
 if (html.contains(r.startContainer) && html.contains(r.endContainer)) {
 range = r;
 }
 }
-const snapshot = {
+var snapshot = {
 text: html.textContent,
 selection: null,
 scrollTop: html.scrollTop,
@@ -906,16 +906,16 @@ htmlRedoStack = [];
 }
 
 function saveCSSCodeSnapshot() {
-const css = document.getElementById("css");
-const sel = window.getSelection();
+var css = document.getElementById("css");
+var sel = window.getSelection();
 var range = null;
 if (sel.rangeCount > 0) {
-const r = sel.getRangeAt(0);
+var r = sel.getRangeAt(0);
 if (css.contains(r.startContainer) && css.contains(r.endContainer)) {
 range = r;
 }
 }
-const snapshot = {
+var snapshot = {
 text: css.textContent,
 selection: null,
 scrollTop: css.scrollTop,
@@ -934,16 +934,16 @@ cssRedoStack = [];
 }
 
 function saveJsCodeSnapshot() {
-const javascript = document.getElementById("javascript");
-const sel = window.getSelection();
+var javascript = document.getElementById("javascript");
+var sel = window.getSelection();
 var range = null;
 if (sel.rangeCount > 0) {
-const r = sel.getRangeAt(0);
+var r = sel.getRangeAt(0);
 if (javascript.contains(r.startContainer) && javascript.contains(r.endContainer)) {
 range = r;
 }
 }
-const snapshot = {
+var snapshot = {
 text: javascript.textContent,
 selection: null,
 scrollTop: javascript.scrollTop,
@@ -962,7 +962,7 @@ jsRedoStack = [];
 }
 
 function restoreHTMLSnapshot(snapshot) {
-const html = document.getElementById("html");
+var html = document.getElementById("html");
 if (snapshot.text !== undefined) {
 html.textContent = snapshot.text;
 syntaxHighlightContentEditableElement(html, "html");
@@ -976,11 +976,11 @@ if (typeof snapshot.scrollLeft === "number") {
 html.scrollLeft = snapshot.scrollLeft;
 }
 if (snapshot.selection) {
-const sel = window.getSelection();
+var sel = window.getSelection();
 sel.removeAllRanges();
-const range = document.createRange();
-const startNode = getNodeFromPath(snapshot.selection.startContainerPath, html);
-const endNode = getNodeFromPath(snapshot.selection.endContainerPath, html);
+var range = document.createRange();
+var startNode = getNodeFromPath(snapshot.selection.startContainerPath, html);
+var endNode = getNodeFromPath(snapshot.selection.endContainerPath, html);
 if (startNode && endNode) {
 range.setStart(startNode, Math.min(snapshot.selection.startOffset, startNode.textContent.length));
 range.setEnd(endNode, Math.min(snapshot.selection.endOffset, endNode.textContent.length));
@@ -990,7 +990,7 @@ sel.addRange(range);
 }
 
 function restoreCSSSnapshot(snapshot) {
-const css = document.getElementById("css");
+var css = document.getElementById("css");
 if (snapshot.text !== undefined) {
 css.textContent = snapshot.text;
 syntaxHighlightContentEditableElement(css, "css");
@@ -1004,11 +1004,11 @@ if (typeof snapshot.scrollLeft === "number") {
 css.scrollLeft = snapshot.scrollLeft;
 }
 if (snapshot.selection) {
-const sel = window.getSelection();
+var sel = window.getSelection();
 sel.removeAllRanges();
-const range = document.createRange();
-const startNode = getNodeFromPath(snapshot.selection.startContainerPath, css);
-const endNode = getNodeFromPath(snapshot.selection.endContainerPath, css);
+var range = document.createRange();
+var startNode = getNodeFromPath(snapshot.selection.startContainerPath, css);
+var endNode = getNodeFromPath(snapshot.selection.endContainerPath, css);
 if (startNode && endNode) {
 range.setStart(startNode, Math.min(snapshot.selection.startOffset, startNode.textContent.length));
 range.setEnd(endNode, Math.min(snapshot.selection.endOffset, endNode.textContent.length));
@@ -1018,7 +1018,7 @@ sel.addRange(range);
 }
 
 function restoreJsSnapshot(snapshot) {
-const javascript = document.getElementById("javascript");
+var javascript = document.getElementById("javascript");
 if (snapshot.text !== undefined) {
 javascript.textContent = snapshot.text;
 syntaxHighlightContentEditableElement(javascript, "javascript");
@@ -1032,11 +1032,11 @@ if (typeof snapshot.scrollLeft === "number") {
 javascript.scrollLeft = snapshot.scrollLeft;
 }
 if (snapshot.selection) {
-const sel = window.getSelection();
+var sel = window.getSelection();
 sel.removeAllRanges();
-const range = document.createRange();
-const startNode = getNodeFromPath(snapshot.selection.startContainerPath, javascript);
-const endNode = getNodeFromPath(snapshot.selection.endContainerPath, javascript);
+var range = document.createRange();
+var startNode = getNodeFromPath(snapshot.selection.startContainerPath, javascript);
+var endNode = getNodeFromPath(snapshot.selection.endContainerPath, javascript);
 if (startNode && endNode) {
 range.setStart(startNode, Math.min(snapshot.selection.startOffset, startNode.textContent.length));
 range.setEnd(endNode, Math.min(snapshot.selection.endOffset, endNode.textContent.length));
@@ -1046,9 +1046,9 @@ sel.addRange(range);
 }
 
 function getNodePath(node, root) {
-const path = [];
+var path = [];
 while (node && node !== root) {
-const parent = node.parentNode;
+var parent = node.parentNode;
 path.unshift(Array.from(parent.childNodes).indexOf(node));
 node = parent;
 }
@@ -1065,12 +1065,12 @@ return node;
 }
 
 function getCurrentHTMLSelectionSnapshot() {
-const html = document.getElementById("html");
-const sel = window.getSelection();
+var html = document.getElementById("html");
+var sel = window.getSelection();
 if (sel.rangeCount === 0) {
 return null;
 }
-const range = sel.getRangeAt(0);
+var range = sel.getRangeAt(0);
 return {
 startContainerPath: getNodePath(range.startContainer, html),
 startOffset: range.startOffset,
@@ -1080,12 +1080,12 @@ endOffset: range.endOffset
 }
 
 function getCurrentCSSSelectionSnapshot() {
-const css = document.getElementById("css");
-const sel = window.getSelection();
+var css = document.getElementById("css");
+var sel = window.getSelection();
 if (sel.rangeCount === 0) {
 return null;
 }
-const range = sel.getRangeAt(0);
+var range = sel.getRangeAt(0);
 return {
 startContainerPath: getNodePath(range.startContainer, css),
 startOffset: range.startOffset,
@@ -1095,12 +1095,12 @@ endOffset: range.endOffset
 }
 
 function getCurrentJsSelectionSnapshot() {
-const javascript = document.getElementById("javascript");
-const sel = window.getSelection();
+var javascript = document.getElementById("javascript");
+var sel = window.getSelection();
 if (sel.rangeCount === 0) {
 return null;
 }
-const range = sel.getRangeAt(0);
+var range = sel.getRangeAt(0);
 return {
 startContainerPath: getNodePath(range.startContainer, javascript),
 startOffset: range.startOffset,
@@ -1110,11 +1110,11 @@ endOffset: range.endOffset
 }
 
 function applyHTMLSnapshot(fromStack, toStack) {
-const html = document.getElementById("html");
+var html = document.getElementById("html");
 if (fromStack.length === 0) {
 return;
 }
-const snapshot = fromStack.pop();
+var snapshot = fromStack.pop();
 toStack.push({
 text: html.textContent,
 selection: getCurrentHTMLSelectionSnapshot(),
@@ -1129,11 +1129,11 @@ block: "start"
 }
 
 function applyCSSSnapshot(fromStack, toStack) {
-const css = document.getElementById("css");
+var css = document.getElementById("css");
 if (fromStack.length === 0) {
 return;
 }
-const snapshot = fromStack.pop();
+var snapshot = fromStack.pop();
 toStack.push({
 text: css.textContent,
 selection: getCurrentCSSSelectionSnapshot(),
@@ -1148,11 +1148,11 @@ block: "start"
 }
 
 function applyJsSnapshot(fromStack, toStack) {
-const javascript = document.getElementById("javascript");
+var javascript = document.getElementById("javascript");
 if (fromStack.length === 0) {
 return;
 }
-const snapshot = fromStack.pop();
+var snapshot = fromStack.pop();
 toStack.push({
 text: javascript.textContent,
 selection: getCurrentJsSelectionSnapshot(),
@@ -1336,7 +1336,7 @@ fixedHTML.textContent = "";
 fixedCSS.textContent = "";
 fixedJavascript.textContent = "";
 await fetch("https://html-editor-backend.vercel.app/").catch(() => {});
-const res = await fetch("https://html-editor-backend.vercel.app/debug", {
+var res = await fetch("https://html-editor-backend.vercel.app/debug", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify({
@@ -1349,10 +1349,10 @@ if (!res.ok) {
 debuggerPanel.innerHTML = `<div class="error-text">Error ${res.status}</div>`;
 return;
 }
-const data = await res.json();
-const { errors, fixes, fixedHTMLCode, fixedCSSCode, fixedJsCode, remainingRequests } = data;
+var data = await res.json();
+var { errors, fixes, fixedHTMLCode, fixedCSSCode, fixedJsCode, remainingRequests } = data;
 if (!errors || errors.trim() === "") {
-const requestsRemaining = remainingRequests;
+var requestsRemaining = remainingRequests;
 var msg;
 if (requestsRemaining == null) {
 msg = "AI model used for debugging is currently overloaded. Please try again later.";
@@ -1484,12 +1484,12 @@ html = htmlCode;
 css = cssCode;
 js = javascriptCode;
 function mainDownloadZip(baseName, htmlContent, cssContent, jsContent, htmlFileName, cssFileName, jsFileName) {
-const zip = new JSZip();
+var zip = new JSZip();
 zip.file(htmlFileName, htmlContent);
 zip.file(cssFileName, cssContent);
 zip.file(jsFileName, jsContent);
 zip.generateAsync({ type: "blob" }).then((content) => {
-const link = document.createElement("a");
+var link = document.createElement("a");
 link.href = URL.createObjectURL(content);
 link.download = baseName + ".zip";
 link.click();
@@ -1509,7 +1509,7 @@ frame.srcdoc = html;
 frame.onload = function() {
 var doc = frame.contentDocument;
 doc.head.appendChild(style);
-doc.head.appendChild(script);
+doc.body.appendChild(script);
 html = doc.documentElement.outerHTML;
 frame.remove();
 mainDownloadZip(codeName.replaceLastPortion(".code", ""), html, css, js, codeName.replaceLastPortion(".code", ".html"), codeName.replaceLastPortion(".code", ".css"), codeName.replaceLastPortion(".code", ".js"));
@@ -1528,7 +1528,7 @@ frame.srcdoc = html;
 frame.onload = function() {
 var doc = frame.contentDocument;
 doc.head.appendChild(style);
-doc.head.appendChild(script);
+doc.body.appendChild(script);
 html = doc.documentElement.outerHTML;
 frame.remove();
 mainDownloadZip(codeName.replaceLastPortion(".code", ""), html, css, js, "htmlCode.html", "cssCode.css", "javascriptCode.js");
@@ -1547,7 +1547,7 @@ frame.srcdoc = html;
 frame.onload = function() {
 var doc = frame.contentDocument;
 doc.head.appendChild(style);
-doc.head.appendChild(script);
+doc.body.appendChild(script);
 html = doc.documentElement.outerHTML;
 frame.remove();
 mainDownloadZip(codeName.replaceLastPortion(".code", ""), html, css, js, codeName + ".html", codeName + ".css", codeName + ".js");
@@ -1574,13 +1574,13 @@ if (files.length !== 3) {
 alert("You must select exactly 3 files.");
 return;
 }
-let fileTypes = {
+var fileTypes = {
 html: null,
 css: null,
 js: null
 };
 files.forEach(file => {
-const extension = file.name.split(".").pop().toLowerCase();
+var extension = file.name.split(".").pop().toLowerCase();
 if (extension === "html" || extension === "htm") {
 fileTypes.html = file;
 }
