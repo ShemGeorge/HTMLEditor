@@ -60,4 +60,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: HTMLEditor-Linux
-          path: dist/HTMLEditor-Linux.zip  # Upload the .zip artifact
+          path: dist/HTMLEditor-Linux.zip
