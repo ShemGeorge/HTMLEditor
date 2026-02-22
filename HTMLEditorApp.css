@@ -5,8 +5,8 @@ padding: 0;
 }
 
 :root {
---editor-font-size: 13px;
---editor-line-height: 20px;
+--editor-font-size: 10px;
+--editor-line-height: 15.38px;
 }
 
 *::-webkit-scrollbar {
@@ -412,7 +412,7 @@ margin: 6px;
 }
 
 .code {
-font-size: 12px;
+font-size: 9px;
 }
 
 .line-numbers {
