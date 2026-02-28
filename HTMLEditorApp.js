@@ -459,19 +459,33 @@ var sel = window.getSelection();
 var range = document.createRange();
 var walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
 var node, index = 0;
+var startNode = null, endNode = null;
+var startOffset = 0, endOffset = 0;
 while ((node = walker.nextNode())) {
 var len = node.textContent.length;
-if (start < index + len) {
-var startOffset = Math.max(0, start - index);
-var endOffset = Math.min(len, end - index);
-range.setStart(node, startOffset);
-range.setEnd(node, endOffset);
-sel.removeAllRanges();
-sel.addRange(range);
-node.parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+if (start < index + len && !startNode) {
+startNode = node;
+startOffset = start - index;
+}
+if (end <= index + len && !endNode) {
+endNode = node;
+endOffset = end - index;
 break;
 }
 index += len;
+}
+if (startNode && endNode) {
+if (startNode === endNode) {
+range.setStart(startNode, startOffset);
+range.setEnd(endNode, endOffset);
+}
+else {
+range.setStart(startNode, startOffset);
+range.setEnd(endNode, endOffset);
+}
+sel.removeAllRanges();
+sel.addRange(range);
+range.startContainer.parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 }
 
