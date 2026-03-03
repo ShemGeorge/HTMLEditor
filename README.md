@@ -42,4 +42,4 @@ For any questions, issues, or suggestions, open an **issue** in this repository.
 
 ---
 
-*Built with intensity by Shem.*
+*Built with precision by Shem.*
