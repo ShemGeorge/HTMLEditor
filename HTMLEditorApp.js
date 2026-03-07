@@ -1421,16 +1421,35 @@ alert("Fixed Javascript copied successfully.");
 }
 
 function runCode() {
-var html = document.getElementById("html");
-var css = document.getElementById("css");
-var javascript = document.getElementById("javascript");
+var html = document.getElementById("html").innerText;
+var css = document.getElementById("css").textContent;
+var javascript = document.getElementById("javascript").textContent;
 var result = document.getElementById("result");
-var srcCode = html.innerText;
-srcCode += "<style>" + css.textContent.replace(/<\/(style)>/gi, '<\\/$1>') + "</style><script>" + javascript.textContent.replace(/<\/(script)>/gi, '<\\/$1>') + "</script>";
-updateLineNumbers(html, document.getElementById("htmlLineList"));
-updateLineNumbers(css, document.getElementById("cssLineList"));
-updateLineNumbers(javascript, document.getElementById("javascriptLineList"));
-result.srcdoc = srcCode;
+updateLineNumbers(document.getElementById("html"), document.getElementById("htmlLineList"));
+updateLineNumbers(document.getElementById("css"), document.getElementById("cssLineList"));
+updateLineNumbers(document.getElementById("javascript"), document.getElementById("javascriptLineList"));
+result.srcdoc = `<!DOCTYPE html>
+<html>
+<body>
+<script>
+window.addEventListener("message", (event) => {
+const { html, css, js } = event.data;
+document.open();
+document.write(html);
+document.close();
+const styleTag = document.createElement("style");
+styleTag.textContent = css;
+document.head.appendChild(styleTag);
+const scriptTag = document.createElement("script");
+scriptTag.textContent = js;
+document.body.appendChild(scriptTag);
+}, false);
+</script>
+</body>
+</html>`;
+result.onload = function() {
+result.contentWindow.postMessage({ html: html, css: css, js: javascript }, "*");
+}
 result.focus();
 document.getElementById("editorPane").scrollIntoView({
 behavior: "smooth",
