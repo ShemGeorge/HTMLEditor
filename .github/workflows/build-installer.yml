@@ -16,15 +16,11 @@ jobs:
           node-version: '20'
       - run: npm install
       - run: npm run dist -- --publish never
-      - name: Create .zip for Windows using PowerShell
-        shell: pwsh
-        run: |
-          cd dist
-          Compress-Archive -Path *.exe -DestinationPath HTMLEditor-Windows.zip
-      - uses: actions/upload-artifact@v4
+      - name: Upload Windows installer as artifact
+        uses: actions/upload-artifact@v4
         with:
           name: HTMLEditor-Windows
-          path: dist/HTMLEditor-Windows.zip
+          path: dist/*.exe
 
   build-macos:
     runs-on: macos-latest
@@ -35,14 +31,11 @@ jobs:
           node-version: '20'
       - run: npm install
       - run: npm run dist -- --publish never
-      - name: Create .zip for macOS
-        run: |
-          cd dist
-          zip -r HTMLEditor-Mac.zip *.dmg
-      - uses: actions/upload-artifact@v4
+      - name: Upload macOS installer as artifact
+        uses: actions/upload-artifact@v4
         with:
           name: HTMLEditor-Mac
-          path: dist/HTMLEditor-Mac.zip
+          path: dist/*.dmg
 
   build-linux:
     runs-on: ubuntu-latest
@@ -53,11 +46,8 @@ jobs:
           node-version: '20'
       - run: npm install
       - run: npm run dist -- --publish never
-      - name: Create .zip for Linux
-        run: |
-          cd dist
-          zip -r HTMLEditor-Linux.zip *.AppImage *.deb
-      - uses: actions/upload-artifact@v4
+      - name: Upload Linux installer as artifact
+        uses: actions/upload-artifact@v4
         with:
           name: HTMLEditor-Linux
-          path: dist/HTMLEditor-Linux.zip
+          path: dist/*.AppImage dist/*.deb
