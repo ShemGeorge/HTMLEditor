@@ -1494,6 +1494,7 @@ document.getElementById("editorPane").scrollIntoView({
 behavior: "smooth",
 block: "start"
 });
+newResultFrame.focus();
 }
 
 function frameFullScreen() {
