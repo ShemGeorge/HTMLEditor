@@ -1455,30 +1455,41 @@ var html = document.getElementById("html").textContent;
 var css = document.getElementById("css").textContent;
 var javascript = document.getElementById("javascript").textContent;
 var result = document.getElementById("result");
+var theme = document.getElementById("theme");
 updateLineNumbers(document.getElementById("html"), document.getElementById("htmlLineList"));
 updateLineNumbers(document.getElementById("css"), document.getElementById("cssLineList"));
 updateLineNumbers(document.getElementById("javascript"), document.getElementById("javascriptLineList"));
-result.contentWindow.document.open();
-result.contentWindow.document.write(html);
-result.contentWindow.document.close();
+var newResultFrame = document.createElement("iframe");
+newResultFrame.id = "result";
+newResultFrame.tabIndex = 0;
+document.getElementById("result").parentElement.replaceChild(newResultFrame, result);
+if (theme.value === "dark") {
+newResultFrame.style.border = "1px solid #ccc";
+}
+else if (theme.value === "light") {
+newResultFrame.style.border = "1px solid #444";
+}
+newResultFrame.contentWindow.document.open();
+newResultFrame.contentWindow.document.write(html);
+newResultFrame.contentWindow.document.close();
 var style = document.createElement("style");
 style.textContent = css;
-result.contentWindow.document.head.appendChild(style);
-var script = document.createElement("script");
+newResultFrame.contentWindow.document.head.appendChild(style);
 var jsBlob = new Blob([javascript], { type: "application/javascript" });
 var jsURL = URL.createObjectURL(jsBlob);
+var script = document.createElement("script");
 script.src = jsURL;
+newResultFrame.contentWindow.document.head.appendChild(script);
 script.onload = function() {
-if (result.contentWindow.document.readyState !== "loading") {
-result.contentWindow.document.dispatchEvent(new Event("DOMContentLoaded"));
-result.contentWindow.dispatchEvent(new Event("DOMContentLoaded"));
-if (typeof result.contentWindow.document.onreadystatechange === "function") {
-result.contentWindow.document.onreadystatechange();
-}
-}
 URL.revokeObjectURL(jsURL);
+if (newResultFrame.contentWindow.document.readyState !== "loading") {
+newResultFrame.contentWindow.document.dispatchEvent(new Event("DOMContentLoaded"));
+newResultFrame.contentWindow.dispatchEvent(new Event("DOMContentLoaded"));
+if (typeof newResultFrame.contentWindow.document.onreadystatechange === "function") {
+newResultFrame.contentWindow.document.onreadystatechange();
 }
-result.contentWindow.document.head.appendChild(script);
+}
+}
 document.getElementById("editorPane").scrollIntoView({
 behavior: "smooth",
 block: "start"
