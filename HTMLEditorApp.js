@@ -1,4 +1,6 @@
 var defaultTitle = document.title;
+var HEcodes = localStorage.getItem("HEcodes");
+var channel = new BroadcastChannel("HEcodes");
 var unsavedChanges = false;
 var lastHTMLFindOnlyIndex = 0;
 var lastHTMLFindIndex = 0;
@@ -13,6 +15,21 @@ var cssRedoStack = [];
 var jsUndoStack = [];
 var jsRedoStack = [];
 
+channel.onmessage = function(e) {
+if (e.data.type === "request-files") {
+channel.postMessage({
+type: "send-files",
+files: HEcodes
+});
+}
+if (e.data.type === "send-files") {
+HEcodes = e.data.files;
+if (invalidArray(JSON.parse(HEcodes))) {
+HEcodes = "[]";
+}
+}
+}
+
 window.addEventListener("beforeunload", function(e) {
 if (unsavedChanges) {
 e.preventDefault();
@@ -20,14 +37,19 @@ e.returnValue = "";
 }
 });
 
+window.addEventListener("pagehide", function(e) {
+localStorage.setItem("HEcodes", HEcodes);
+});
+
 window.onload = function() {
 var themeOBJ = document.getElementById("theme");
 var html = document.getElementById("html");
 var css = document.getElementById("css");
 var javascript = document.getElementById("javascript");
-if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
-localStorage.setItem("HEcodes", "[]");
+if (HEcodes === null) {
+channel.postMessage({ type: "request-files" });
 }
+localStorage.removeItem("HEcodes");
 loadTheme().then(theme => {
 if (theme !== "dark" && theme !== "light") {
 storeTheme();
@@ -317,10 +339,10 @@ button.style.color = "white";
 }
 
 function saveCodeToLocalStorage(name, htmlCode, cssCode, jsCode) {
-if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
-localStorage.setItem("HEcodes", "[]");
+if (invalidArray(JSON.parse(HEcodes))) {
+HEcodes = "[]";
 }
-var codes = JSON.parse(localStorage.getItem("HEcodes"));
+var codes = JSON.parse(HEcodes);
 var existingCodeIndex = codes.findIndex(item => item.codeName === name);
 if (existingCodeIndex !== -1) {
 codes[existingCodeIndex].html = htmlCode;
@@ -330,25 +352,33 @@ codes[existingCodeIndex].javascript = jsCode;
 else {
 codes.push({codeName: name, html: htmlCode, css: cssCode, javascript: jsCode});
 }
-localStorage.setItem("HEcodes", JSON.stringify(codes));
+HEcodes = JSON.stringify(codes);
+channel.postMessage({
+type: "send-files",
+files: HEcodes
+});
 }
 
 function retreiveCodeFromLocalStorage(codeName) {
-if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
-localStorage.setItem("HEcodes", "[]");
+if (invalidArray(JSON.parse(HEcodes))) {
+HEcodes = "[]";
 }
-var codes = JSON.parse(localStorage.getItem("HEcodes"));
+var codes = JSON.parse(HEcodes);
 var code = codes.find(item => item.codeName === codeName);
 return code ? code : null;
 }
 
 function deleteCodeFromLocalStorage(codeName) {
-if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
-localStorage.setItem("HEcodes", "[]");
+if (invalidArray(JSON.parse(HEcodes))) {
+HEcodes = "[]";
 }
-var codes = JSON.parse(localStorage.getItem("HEcodes"));
+var codes = JSON.parse(HEcodes);
 codes = codes.filter(item => item.codeName !== codeName);
-localStorage.setItem("HEcodes", JSON.stringify(codes));
+HEcodes = JSON.stringify(codes);
+channel.postMessage({
+type: "send-files",
+files: HEcodes
+});
 }
 
 String.prototype.replaceLastPortion = function(search, replacement) {
@@ -1205,11 +1235,11 @@ applyJsSnapshot(jsRedoStack, jsUndoStack);
 }
 
 function showCodes() {
-if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
-localStorage.setItem("HEcodes", "[]");
+if (invalidArray(JSON.parse(HEcodes))) {
+HEcodes = "[]";
 }
 var allCodes = document.getElementById("allCodes");
-var storedCodes = JSON.parse(localStorage.getItem("HEcodes"));
+var storedCodes = JSON.parse(HEcodes);
 var codesLength = document.getElementById("codesLength");
 allCodes.innerHTML = null;
 storedCodes.forEach(code => {
@@ -1421,36 +1451,34 @@ alert("Fixed Javascript copied successfully.");
 }
 
 function runCode() {
-var html = document.getElementById("html").innerText;
+var html = document.getElementById("html").textContent;
 var css = document.getElementById("css").textContent;
 var javascript = document.getElementById("javascript").textContent;
 var result = document.getElementById("result");
 updateLineNumbers(document.getElementById("html"), document.getElementById("htmlLineList"));
 updateLineNumbers(document.getElementById("css"), document.getElementById("cssLineList"));
 updateLineNumbers(document.getElementById("javascript"), document.getElementById("javascriptLineList"));
-result.srcdoc = `<!DOCTYPE html>
-<html>
-<body>
-<script>
-window.addEventListener("message", (event) => {
-const { html, css, js } = event.data;
-document.open();
-document.write(html);
-document.close();
-const styleTag = document.createElement("style");
-styleTag.textContent = css;
-document.head.appendChild(styleTag);
-const scriptTag = document.createElement("script");
-scriptTag.textContent = js;
-document.body.appendChild(scriptTag);
-}, false);
-</script>
-</body>
-</html>`;
-result.onload = function() {
-result.contentWindow.postMessage({ html: html, css: css, js: javascript }, "*");
+result.contentWindow.document.open();
+result.contentWindow.document.write(html);
+result.contentWindow.document.close();
+var style = document.createElement("style");
+style.textContent = css;
+result.contentWindow.document.head.appendChild(style);
+var script = document.createElement("script");
+var jsBlob = new Blob([javascript], { type: "application/javascript" });
+var jsURL = URL.createObjectURL(jsBlob);
+script.src = jsURL;
+script.onload = function() {
+if (result.contentWindow.document.readyState !== "loading") {
+result.contentWindow.document.dispatchEvent(new Event("DOMContentLoaded"));
+result.contentWindow.dispatchEvent(new Event("DOMContentLoaded"));
+if (typeof result.contentWindow.document.onreadystatechange === "function") {
+result.contentWindow.document.onreadystatechange();
 }
-result.focus();
+}
+URL.revokeObjectURL(jsURL);
+}
+result.contentWindow.document.head.appendChild(script);
 document.getElementById("editorPane").scrollIntoView({
 behavior: "smooth",
 block: "start"
@@ -2153,7 +2181,7 @@ document.getElementById("css").style.color = "white";
 document.getElementById("javascript").style.color = "white";
 }
 }`;
-if (html.textContent.length > 0 || css.textContent > 0 || javascript.textContent > 0) {
+if (html.textContent.length > 0 || css.textContent.length > 0 || javascript.textContent.length > 0) {
 confirmOpenTutorial = confirm("Are you sure you want to open this tutorial? Changes may not be saved.");
 if (confirmOpenTutorial == true) {
 blankCodeWithoutConfirmation();
