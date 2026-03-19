@@ -412,11 +412,9 @@ return this.slice(0, index) + replacement + this.slice(index + search.length);
 }
 
 String.prototype.textify = function() {
-var textified = this;
-textified = textified.replace(/&/g, "&amp;");
-textified = textified.replace(/</g, "&lt;");
-textified = textified.replace(/>/g, "&gt;");
-return textified;
+var dummyDiv = document.createElement("div");
+dummyDiv.textContent = this;
+return dummyDiv.innerHTML;
 }
 
 function openHTMLFindOnly() {
