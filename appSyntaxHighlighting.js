@@ -558,8 +558,29 @@ if (txt[i] === "`") {
 out += "<span class='javascript-string-" + theme.value + "'>`";
 i++;
 while (i < txt.length) {
-if (txt[i] === "`" && txt[i - 1] !== "\\") { out += "`</span>"; i++; break; }
-if (txt[i] === "$" && txt[i + 1] === "{" && txt[i - 1] !== "\\") {
+if (txt[i] === "`") {
+var backslashCount = 0, j = i - 1;
+while (j >= 0 && txt[j] === "\\") {
+backslashCount++;
+j--;
+}
+if (backslashCount % 2 === 0) {
+out += "`</span>";
+i++;
+break;
+}
+}
+if (txt[i] === "$" && txt[i + 1] === "{") {
+var backslashCount = 0, j = i - 1;
+while (j >= 0 && txt[j] === "\\") {
+backslashCount++;
+j--;
+}
+if (backslashCount % 2 === 1) {
+out += txt[i];
+i++;
+continue;
+}
 out += "<span class='javascript-templateBrace-" + theme.value + "'>${</span>";
 i += 2;
 var raw = txt.slice(i);
@@ -630,8 +651,26 @@ if (clean[i] === "`") {
 var start = i;
 i++;
 while (i < clean.length) {
-if (clean[i] === "`" && clean[i - 1] !== "\\") return [start, i + 1, func];
-if (clean[i] === "$" && clean[i + 1] === "{" && clean[i - 1] !== "\\") {
+if (clean[i] === "`") {
+var backslashCount = 0, j = i - 1;
+while (j >= 0 && clean[j] === "\\") {
+backslashCount++;
+j--;
+}
+if (backslashCount % 2 === 0) {
+return [start, i + 1, func];
+}
+}
+if (clean[i] === "$" && clean[i + 1] === "{") {
+var backslashCount = 0, j = i - 1;
+while (j >= 0 && clean[j] === "\\") {
+backslashCount++;
+j--;
+}
+if (backslashCount % 2 === 1) {
+i++;
+continue;
+}
 i += 2;
 var raw = clean.slice(i);
 var highlighted = jsMode(raw);
