@@ -1508,6 +1508,9 @@ newResultFrame.contentWindow.dispatchEvent(new Event("DOMContentLoaded"));
 if (typeof newResultFrame.contentWindow.document.onreadystatechange === "function") {
 newResultFrame.contentWindow.document.onreadystatechange();
 }
+if (typeof newResultFrame.contentWindow.onload === "function") {
+newResultFrame.contentWindow.onload();
+}
 }
 }
 document.getElementById("editorPane").scrollIntoView({
