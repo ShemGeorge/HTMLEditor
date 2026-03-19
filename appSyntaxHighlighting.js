@@ -98,11 +98,17 @@ break;
 out += txt.substring(pos);
 return out;
 }
-function disableHtmlCommentsInsideTags(txt) {
+function disableHTMLCommentsInsideTags(txt) {
 var out = "";
 var i = 0;
 while (i < txt.length) {
 if (txt.startsWith("&lt;", i) && !txt.startsWith("&lt;!--", i)) {
+var nextChar = txt.charAt(i + 4);
+if (!/[a-zA-Z\/?!]/.test(nextChar)) {
+out += "&lt;";
+i += 4;
+continue;
+}
 var tagStart = i;
 var tagEnd = txt.indexOf("&gt;", i + 4);
 if (tagEnd === -1) {
@@ -113,6 +119,81 @@ break;
 }
 var tagText = txt.slice(i, tagEnd + 4);
 tagText = tagText.replace(/&lt;!--/g, "&lt;<HTMLCOMMENT_INSERTION></HTMLCOMMENT_INSERTION>!--");
+out += tagText;
+i = tagEnd + 4;
+continue;
+}
+out += txt[i];
+i++;
+}
+return out;
+}
+function disableHTMLDoctypeInScriptAndStyle(txt) {
+var out = "";
+var pos = 0;
+var openTagRegex = /&lt;(script|style)\b/gi;
+var match;
+while ((match = openTagRegex.exec(txt)) !== null) {
+var start = match.index;
+out += txt.substring(pos, start);
+var openTagEnd = txt.indexOf("&gt;", start);
+if (openTagEnd === -1) openTagEnd = txt.length;
+var blockStart = openTagEnd + 4;
+var tagName = match[1].toLowerCase();
+var closeTagRegex = new RegExp(`&lt;\\s*\\/${tagName}\\s*&gt;`, "i");
+var closingMatch = closeTagRegex.exec(txt.slice(blockStart));
+var blockEnd;
+if (closingMatch) {
+blockEnd = blockStart + closingMatch.index;
+} else {
+blockEnd = txt.length;
+}
+var inner = txt.substring(blockStart, blockEnd);
+inner = inner.replace(/&lt;!DOCTYPE/gi, function(match) {
+return "&lt;<HTMLDOCTYPE_INSERTION></HTMLDOCTYPE_INSERTION>" + match.substring(4);
+});
+out += txt.substring(start, blockStart) + inner;
+if (closingMatch) {
+var closingTagStart = blockEnd;
+var closingTagEnd = blockEnd + closingMatch[0].length;
+out += txt.substring(closingTagStart, closingTagEnd);
+pos = closingTagEnd;
+openTagRegex.lastIndex = closingTagEnd;
+}
+else {
+pos = txt.length;
+break;
+}
+}
+out += txt.substring(pos);
+return out;
+}
+function disableHTMLDoctypeInsideTags(txt) {
+var out = "";
+var i = 0;
+var textUpper = txt.toUpperCase();
+while (i < txt.length) {
+if (txt.startsWith("&lt;", i) && !textUpper.startsWith("&LT;!DOCTYPE", i)) {
+var nextChar = txt.charAt(i + 4);
+if (!/[a-zA-Z\/?!]/.test(nextChar)) {
+out += "&lt;";
+i += 4;
+continue;
+}
+var tagStart = i;
+var tagEnd = txt.indexOf("&gt;", i + 4);
+if (tagEnd === -1) {
+var tagBody = txt.slice(i);
+tagBody = tagBody.replace(/&lt;!DOCTYPE/gi, function(match) {
+return "&lt;<HTMLDOCTYPE_INSERTION></HTMLDOCTYPE_INSERTION>" + match.substring(4);
+});
+out += tagBody;
+break;
+}
+var tagText = txt.slice(i, tagEnd + 4);
+tagText = tagText.replace(/&lt;!DOCTYPE/gi, function(match) {
+return "&lt;<HTMLDOCTYPE_INSERTION></HTMLDOCTYPE_INSERTION>" + match.substring(4);
+});
 out += tagText;
 i = tagEnd + 4;
 continue;
@@ -170,7 +251,19 @@ return str.length - 1;
 }
 var result = "", pos = 0;
 while (pos < source.length) {
-var tagStart = source.indexOf("&lt;", pos);
+var tagStart = -1;
+for (var i = pos; i < source.length - 3; i++) {
+if (source.substr(i, 4) === "&lt;") {
+if (/[a-zA-Z\/?!]/.test(source.charAt(i + 4))) {
+tagStart = i;
+break;
+}
+}
+}
+if (tagStart === -1) { 
+result += source.substring(pos); 
+break; 
+}
 if (tagStart === -1) { result += source.substring(pos); break; }
 result += source.substring(pos, tagStart);
 var tagEnd = findTagEnd(source, tagStart);
@@ -224,24 +317,29 @@ return out;
 function htmlMode(txt) {
 var rest = txt, done = "", comment, startpos, endpos, note, i;
 rest = disableHTMLCommentsInScriptAndStyle(rest);
-rest = disableHtmlCommentsInsideTags(rest);
+rest = disableHTMLCommentsInsideTags(rest);
+rest = disableHTMLDoctypeInScriptAndStyle(rest);
+rest = disableHTMLDoctypeInsideTags(rest);
 comment = new extract(rest, "&lt;!--", "--&gt;", commentMode, "<HTMLCOMMENT_ESCAPE></HTMLCOMMENT_ESCAPE>");
 rest = comment.rest;
+doctype = new extract(rest, /&LT;!DOCTYPE/i, "&gt;", doctypeMode, "<HTMLDOCTYPE_ESCAPE></HTMLDOCTYPE_ESCAPE>");
+rest = doctype.rest;
 while (rest.indexOf("&lt;") > -1) {
-if (/^\s*&LT;!DOCTYPE/i.test(rest)) {
-endpos = rest.indexOf("&gt;");
-if (endpos == -1) { endpos = rest.length; }
-done += "<span class='html-doctype-" + theme.value + "'>" + rest.substring(0, endpos + 4) + "</span>";
-rest = rest.substr(endpos + 4);
-continue;
-}
 rest = replaceGreaterThanInQuotes(rest);
 note = "";
 startpos = rest.indexOf("&lt;");
-if (rest.substr(startpos, 9).toUpperCase() === "&LT;STYLE" && (rest.substr(startpos + 9, 4).toUpperCase().startsWith("&GT;") || rest.charAt(startpos + 9) === " ")) {
+if (startpos !== -1) {
+var nextChar = rest.charAt(startpos + 4);
+if (!/[a-zA-Z\/?!]/.test(nextChar)) {
+done += rest.substring(0, startpos + 4);
+rest = rest.substr(startpos + 4);
+continue;
+}
+}
+if (rest.substr(startpos, 9).toUpperCase() === "&LT;STYLE" && (rest.substr(startpos + 9, 4).toUpperCase().startsWith("&GT;") || /\s/.test(rest.charAt(startpos + 9)))) {
 note = "css";
 }
-if (rest.substr(startpos, 10).toUpperCase() === "&LT;SCRIPT" && (rest.substr(startpos + 10, 4).toUpperCase().startsWith("&GT;") || rest.charAt(startpos + 10) === " ")) {
+if (rest.substr(startpos, 10).toUpperCase() === "&LT;SCRIPT" && (rest.substr(startpos + 10, 4).toUpperCase().startsWith("&GT;") || /\s/.test(rest.charAt(startpos + 10)))) {
 note = "javascript";
 }
 endpos = rest.indexOf("&gt;", startpos);
@@ -268,7 +366,11 @@ rest = done + rest;
 for (i = 0; i < comment.arr.length; i++) {
 rest = rest.replace("<HTMLCOMMENT_ESCAPE></HTMLCOMMENT_ESCAPE>", comment.arr[i]);
 }
+for (i = 0; i < doctype.arr.length; i++) {
+rest = rest.replace("<HTMLDOCTYPE_ESCAPE></HTMLDOCTYPE_ESCAPE>", doctype.arr[i]);
+}
 rest = rest.replace(/<HTMLCOMMENT_INSERTION><\/HTMLCOMMENT_INSERTION>/g, "");
+rest = rest.replace(/<HTMLDOCTYPE_INSERTION><\/HTMLDOCTYPE_INSERTION>/g, "");
 rest = rest.replace(/<LT_ESCAPE><\/LT_ESCAPE>/g, "&lt;");
 rest = rest.replace(/<GT_ESCAPE><\/GT_ESCAPE>/g, "&gt;");
 return rest;
@@ -342,6 +444,9 @@ return "<span class='html-attributeEquals-" + theme.value + "'>=</span><span cla
 }
 function commentMode(txt) {
 return "<span class='comment-" + theme.value + "'>" + txt + "</span>";
+}
+function doctypeMode(txt) {
+return "<span class='html-doctype-" + theme.value + "'>" + txt + "</span>";
 }
 function makeCssSafe(text) {
 var inSingle = false, inDouble = false, inBacktick = false;
@@ -771,7 +876,7 @@ pos2 = i;
 return [pos1, pos2, func];
 }
 function getDotPos(txt, func) {
-var x, i, j, s, e, arr = [".", "<", ">", " ", ";", "(", "+", ")", "[", "]", ",", "&", ":", "?", "{", "}", "/" ,"-", "*", "|", "%", "=", "\n"];
+var x, i, j, s, e, arr = [".", "<", ">", " ", ";", "(", "+", ")", "[", "]", ",", "&", ":", "?", "{", "}", "/" ,"-", "*", "|", "\\", "%", "=", "\n", "\"", "'", "`"];
 s = txt.indexOf(".");
 if (s > -1) {
 x = txt.substr(s + 1);
@@ -867,25 +972,47 @@ return [s, e + (end.length || 0), func];
 }
 }
 function getNumPos(txt, func) {
-var arr = ["\n", " ", ";", "(", "+", ")", "[", "]", ",", "&", ":", "{", "}", "/" ,"-", "*", "|", "%", "="], i, j, c, startpos = 0, endpos, word;
-for (i = 0; i < txt.length; i++) {
-for (j = 0; j < arr.length; j++) {
-c = txt.substr(i, arr[j].length);
-if (c == arr[j]) {
-if (c == "-" && (txt.substr(i - 1, 1) == "e" || txt.substr(i - 1, 1) == "E")) {
-continue;
-}
-endpos = i;
-if (startpos < endpos) {
-word = txt.substring(startpos, endpos);
-if (!isNaN(word)) {return [startpos, endpos, func];}
-}
-i += arr[j].length;
+var i = 0;
+var startpos = -1;
+while (i < txt.length) {
+var c = txt[i];
+if ((c >= '0' && c <= '9') || (c === '.' && i + 1 < txt.length && txt[i+1] >= '0' && txt[i+1] <= '9')) {
 startpos = i;
-i -= 1;
+var hasDot = (c === '.');
+var hasE = false;
+i++;
+while (i < txt.length) {
+var ch = txt[i];
+if (ch >= '0' && ch <= '9') {
+i++;
+}
+else if (ch === '.' && !hasDot && !hasE) { 
+hasDot = true;
+i++;
+}
+else if ((ch === 'e' || ch === 'E') && !hasE) {
+hasE = true;
+var next = txt[i + 1];
+var expStart = i + 1;
+if (next === '+' || next === '-') {
+expStart++;
+}
+if (expStart < txt.length && txt[expStart] >= '0' && txt[expStart] <= '9') {
+i += 2;
+if (next === '+' || next === '-') i++;
+while (i < txt.length && txt[i] >= '0' && txt[i] <= '9') i++;
+}
+else {
+return [startpos, i, func];
+}
+}
+else {
 break;
 }
 }
+return [startpos, i, func];
+}
+i++;
 }
 return [-1, -1, func];
 }
