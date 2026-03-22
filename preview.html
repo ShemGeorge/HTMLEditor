@@ -23,12 +23,11 @@ window.addEventListener("message", (e) => {
     </head>
     <body>
       ${html}
-      <script src="${jsURL}"><\/script>
+      <script src="${jsURL}" defer="true"><\/script>
     </body>
     </html>
   `);
   document.close();
-location.reload();
 });
 </script>
 </body>
