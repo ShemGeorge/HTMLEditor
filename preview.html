@@ -6,28 +6,19 @@
 <body>
 <script>
 window.addEventListener("message", (e) => {
-  const { html, css, js } = e.data;
-
-  const cssBlob = new Blob([css], { type: "text/css" });
-  const jsBlob = new Blob([js], { type: "application/javascript" });
-
-  const cssURL = URL.createObjectURL(cssBlob);
-  const jsURL = URL.createObjectURL(jsBlob);
-
-  document.open();
-  document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <link rel="stylesheet" href="${cssURL}">
-    </head>
-    <body>
-      ${html}
-      <script src="${jsURL}" defer="true"><\/script>
-    </body>
-    </html>
-  `);
-  document.close();
+var { html, cssURL, jsURL } = e.data;
+document.open();
+document.write(`<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="${cssURL}">
+</head>
+<body>
+${html}
+<script src="${jsURL}" defer="true"><\/script>
+</body>
+</html>`);
+document.close();
 });
 </script>
 </body>
