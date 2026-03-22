@@ -1482,42 +1482,26 @@ updateLineNumbers(document.getElementById("javascript"), document.getElementById
 var newResultFrame = document.createElement("iframe");
 newResultFrame.id = "result";
 newResultFrame.tabIndex = 0;
-document.getElementById("result").parentElement.replaceChild(newResultFrame, result);
+result.parentElement.replaceChild(newResultFrame, result);
 if (theme.value === "dark") {
 newResultFrame.style.border = "1px solid #ccc";
 }
-else if (theme.value === "light") {
+else if(theme.value === "light") {
 newResultFrame.style.border = "1px solid #444";
 }
-newResultFrame.contentWindow.document.open();
-newResultFrame.contentWindow.document.write(html);
-newResultFrame.contentWindow.document.close();
-var style = document.createElement("style");
-style.textContent = css;
-newResultFrame.contentWindow.document.head.appendChild(style);
-var jsBlob = new Blob([javascript], { type: "application/javascript" });
-var jsURL = URL.createObjectURL(jsBlob);
-var script = document.createElement("script");
-script.src = jsURL;
-newResultFrame.contentWindow.document.head.appendChild(script);
-script.onload = function() {
-URL.revokeObjectURL(jsURL);
-if (newResultFrame.contentWindow.document.readyState !== "loading") {
-newResultFrame.contentWindow.document.dispatchEvent(new Event("DOMContentLoaded"));
-newResultFrame.contentWindow.dispatchEvent(new Event("DOMContentLoaded"));
-if (typeof newResultFrame.contentWindow.document.onreadystatechange === "function") {
-newResultFrame.contentWindow.document.onreadystatechange();
-}
-if (typeof newResultFrame.contentWindow.onload === "function") {
-newResultFrame.contentWindow.onload();
-}
-}
+newResultFrame.src = "https://shemgeorge.github.io/HTMLEditor/preview.html";
+newResultFrame.onload = function() {
+newResultFrame.contentWindow.postMessage({
+html: html,
+css: css,
+js: javascript
+}, "https://shemgeorge.github.io/");
+newResultFrame.focus();
 }
 document.getElementById("editorPane").scrollIntoView({
 behavior: "smooth",
 block: "start"
 });
-newResultFrame.focus();
 }
 
 function frameFullScreen() {
