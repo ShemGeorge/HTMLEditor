@@ -6,7 +6,11 @@
 <body>
 <script>
 window.addEventListener("message", (e) => {
-var { html, cssURL, jsURL } = e.data;
+var { html, css, js } = e.data;
+var cssBlob = new Blob([css], { type: "text/css" });
+var jsBlob = new Blob([js], { type: "application/javascript" });
+var cssURL = URL.createObjectURL(cssBlob);
+var jsURL = URL.createObjectURL(jsBlob);
 document.open();
 document.write(`<!DOCTYPE html>
 <html>
@@ -19,6 +23,8 @@ ${html}
 </body>
 </html>`);
 document.close();
+URL.revokeObjectURL(cssURL);
+URL.revokeObjectURL(jsURL);
 });
 </script>
 </body>
