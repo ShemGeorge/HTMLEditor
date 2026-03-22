@@ -16,6 +16,16 @@ document.head.appendChild(style);
 const script = document.createElement("script");
 script.textContent = js;
 document.body.appendChild(script);
+if (newResultFrame.contentWindow.document.readyState !== "loading") {
+newResultFrame.contentWindow.document.dispatchEvent(new Event("DOMContentLoaded"));
+newResultFrame.contentWindow.dispatchEvent(new Event("DOMContentLoaded"));
+if (typeof newResultFrame.contentWindow.document.onreadystatechange === "function") {
+newResultFrame.contentWindow.document.onreadystatechange();
+}
+if (typeof newResultFrame.contentWindow.onload === "function") {
+newResultFrame.contentWindow.onload();
+}
+}
 });
 </script>
 </body>
