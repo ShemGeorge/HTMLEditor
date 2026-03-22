@@ -1,8 +1,4 @@
 var defaultTitle = document.title;
-var HEcodes = localStorage.getItem("HEcodes");
-var openTabs = 1;
-var codesChannel = new BroadcastChannel("codes_transfer");
-var tabsChannel = new BroadcastChannel("tabs_check");
 var unsavedChanges = false;
 var lastHTMLFindOnlyIndex = 0;
 var lastHTMLFindIndex = 0;
@@ -17,37 +13,6 @@ var cssRedoStack = [];
 var jsUndoStack = [];
 var jsRedoStack = [];
 
-codesChannel.onmessage = function(e) {
-var msg = e.data;
-if (msg.type === "request-files") {
-codesChannel.postMessage({
-type: "send-files",
-files: HEcodes
-});
-}
-if (msg.type === "send-files") {
-HEcodes = e.data.files;
-if (invalidArray(JSON.parse(HEcodes))) {
-HEcodes = "[]";
-}
-showCodes();
-}
-}
-
-tabsChannel.onmessage = function(e) {
-var msg = e.data;
-if (msg.type === "tab_open") {
-openTabs += 1;
-tabsChannel.postMessage({ type: "tab_count", count: openTabs });
-}
-else if (msg.type === "tab_close") {
-openTabs -= 1;
-}
-else if (msg.type === "tab_count") {
-openTabs = msg.count;
-}
-}
-
 window.addEventListener("beforeunload", function(e) {
 if (unsavedChanges) {
 e.preventDefault();
@@ -55,23 +20,14 @@ e.returnValue = "";
 }
 });
 
-window.addEventListener("pagehide", function(e) {
-if (openTabs === 1) {
-localStorage.setItem("HEcodes", HEcodes);
-}
-tabsChannel.postMessage({ type: "tab_close"});
-});
-
 window.onload = function() {
 var themeOBJ = document.getElementById("theme");
 var html = document.getElementById("html");
 var css = document.getElementById("css");
 var javascript = document.getElementById("javascript");
-if (HEcodes === null) {
-codesChannel.postMessage({ type: "request-files" });
+if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
+localStorage.setItem("HEcodes", "[]");
 }
-tabsChannel.postMessage({ type: "tab_open" });
-localStorage.removeItem("HEcodes");
 loadTheme().then(theme => {
 if (theme !== "dark" && theme !== "light") {
 storeTheme();
@@ -361,10 +317,10 @@ button.style.color = "white";
 }
 
 function saveCodeToLocalStorage(name, htmlCode, cssCode, jsCode) {
-if (invalidArray(JSON.parse(HEcodes))) {
-HEcodes = "[]";
+if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
+localStorage.setItem("HEcodes", "[]");
 }
-var codes = JSON.parse(HEcodes);
+var codes = JSON.parse(localStorage.getItem("HEcodes"));
 var existingCodeIndex = codes.findIndex(item => item.codeName === name);
 if (existingCodeIndex !== -1) {
 codes[existingCodeIndex].html = htmlCode;
@@ -374,33 +330,25 @@ codes[existingCodeIndex].javascript = jsCode;
 else {
 codes.push({codeName: name, html: htmlCode, css: cssCode, javascript: jsCode});
 }
-HEcodes = JSON.stringify(codes);
-codesChannel.postMessage({
-type: "send-files",
-files: HEcodes
-});
+localStorage.setItem("HEcodes", JSON.stringify(codes));
 }
 
 function retreiveCodeFromLocalStorage(codeName) {
-if (invalidArray(JSON.parse(HEcodes))) {
-HEcodes = "[]";
+if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
+localStorage.setItem("HEcodes", "[]");
 }
-var codes = JSON.parse(HEcodes);
+var codes = JSON.parse(localStorage.getItem("HEcodes"));
 var code = codes.find(item => item.codeName === codeName);
 return code ? code : null;
 }
 
 function deleteCodeFromLocalStorage(codeName) {
-if (invalidArray(JSON.parse(HEcodes))) {
-HEcodes = "[]";
+if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
+localStorage.setItem("HEcodes", "[]");
 }
-var codes = JSON.parse(HEcodes);
+var codes = JSON.parse(localStorage.getItem("HEcodes"));
 codes = codes.filter(item => item.codeName !== codeName);
-HEcodes = JSON.stringify(codes);
-codesChannel.postMessage({
-type: "send-files",
-files: HEcodes
-});
+localStorage.setItem("HEcodes", JSON.stringify(codes));
 }
 
 String.prototype.replaceLastPortion = function(search, replacement) {
@@ -1255,11 +1203,11 @@ applyJsSnapshot(jsRedoStack, jsUndoStack);
 }
 
 function showCodes() {
-if (invalidArray(JSON.parse(HEcodes))) {
-HEcodes = "[]";
+if (invalidArray(JSON.parse(localStorage.getItem("HEcodes")))) {
+localStorage.setItem("HEcodes", "[]");
 }
 var allCodes = document.getElementById("allCodes");
-var storedCodes = JSON.parse(HEcodes);
+var storedCodes = JSON.parse(localStorage.getItem("HEcodes"));
 var codesLength = document.getElementById("codesLength");
 allCodes.innerHTML = null;
 storedCodes.forEach(code => {
