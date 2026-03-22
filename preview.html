@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>HTMLEditor Iframe Preview</title>
+</head>
+<body>
+<script>
+window.addEventListener("message", (e) => {
+const { html, css, js } = e.data;
+document.open();
+document.write(html);
+document.close();
+const style = document.createElement("style");
+style.textContent = css;
+document.head.appendChild(style);
+const script = document.createElement("script");
+script.textContent = js;
+document.body.appendChild(script);
+});
+</script>
+</body>
+</html>
