@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog } = require("electron");
+const { app, BrowserWindow, dialog, Menu } = require("electron");
 const path = require("path");
 let mainWindow;
 
@@ -17,6 +17,7 @@ sandbox: true,
 nativeWindowOpen: true
 }
 });
+Menu.setApplicationMenu(null);
 mainWindow.loadFile("HTMLEditorApp.html");
 mainWindow.maximize();
 mainWindow.webContents.on("will-prevent-unload", (event) => {
