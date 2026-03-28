@@ -17,7 +17,6 @@ sandbox: true,
 nativeWindowOpen: true
 }
 });
-Menu.setApplicationMenu(null);
 mainWindow.loadFile("HTMLEditorApp.html");
 mainWindow.maximize();
 mainWindow.webContents.on("will-prevent-unload", (event) => {
