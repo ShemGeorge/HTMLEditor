@@ -1399,7 +1399,7 @@ debuggerPanel.innerHTML = "Please wait while we process your code...";
 fixedHTML.textContent = "";
 fixedCSS.textContent = "";
 fixedJavascript.textContent = "";
-await fetch("https://html-editor-backend.vercel.app/").catch(() => {});
+try {
 var res = await fetch("https://html-editor-backend.vercel.app/debug", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
@@ -1435,6 +1435,9 @@ fixedJavascript.innerHTML = `<u><div style="display: flex;"><span class="fix-tex
 syntaxHighlight(document.getElementById("mainFixedHTML"), "html");
 syntaxHighlight(document.getElementById("mainFixedCSS"), "css");
 syntaxHighlight(document.getElementById("mainFixedJavascript"), "javascript");
+} catch(err) {
+debuggerPanel.innerHTML = "<div class='error-text'>Unable to contact the AI server. Please try again later.</div>";
+}
 }
 
 function copyFixedHTML() {
