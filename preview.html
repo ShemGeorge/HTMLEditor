@@ -12,16 +12,12 @@ var jsBlob = new Blob([js], { type: "application/javascript" });
 var cssURL = URL.createObjectURL(cssBlob);
 var jsURL = URL.createObjectURL(jsBlob);
 document.open();
-document.write(`<!DOCTYPE html>
-<html>
+document.write(`
 <head>
 <link rel="stylesheet" href="${cssURL}">
-</head>
-<body>
-${html}
 <script src="${jsURL}" defer="true"></` + `script>
-</body>
-</html>`);
+</head>
+${html}`);
 document.close();
 URL.revokeObjectURL(cssURL);
 URL.revokeObjectURL(jsURL);
